@@ -1,4 +1,4 @@
-from .student_info import Student
+from .student_info import GraduateStudent, Student, UndergraduateStudent
 
 class StudentRegistry:
     """Manages a collection of Student objects"""
@@ -12,12 +12,20 @@ class StudentRegistry:
         self._next_id += 1
         return student_id
 
-    def add_student(self, name, age, year):
+    def add_student(self, name, age, year, student_type="regular", **kwargs):
         """Create a student object and add it to the registry"""
 
         student_id = self._generate_student_id()
-        
-        student = Student(student_id, name, age, year)
+
+        if student_type == "undergraduate":
+            major = kwargs.get("major", "Undeclared")
+            student = UndergraduateStudent(student_id, name, age, year, major)
+        elif student_type == "graduate":
+            research_topic = kwargs.get("research_topic", "General Research")
+            student = GraduateStudent(student_id, name, age, year, research_topic)
+        else:
+            student = Student(student_id, name, age, year)
+
         self.students[student_id] = student
         return student
 

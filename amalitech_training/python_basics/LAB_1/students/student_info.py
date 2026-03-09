@@ -46,6 +46,9 @@ class Student:
             return NotImplemented
         return self.student_id == other.student_id
 
+    def generate_report(self):
+        return f"Student {self.name} is in year {self.year}."
+
 class UndergraduateStudent(Student):
     def __init__(self, student_id, name, age, year, major):
         super().__init__(student_id, name, age, year)

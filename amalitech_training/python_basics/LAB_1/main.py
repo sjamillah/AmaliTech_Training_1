@@ -10,8 +10,22 @@ def add_student():
     name = input("Student name: ").upper()
     age = int(input("Age: "))
     year = int(input("Year: "))
+    student_type = input("Student type (regular/undergraduate/graduate): ").strip().lower()
 
-    student = student_registry.add_student(name, age, year)
+    if student_type == "undergraduate":
+        major = input("Major: ").strip()
+        student = student_registry.add_student(name, age, year, student_type="undergraduate", major=major)
+    elif student_type == "graduate":
+        research_topic = input("Research topic: ").strip()
+        student = student_registry.add_student(
+            name,
+            age,
+            year,
+            student_type="graduate",
+            research_topic=research_topic,
+        )
+    else:
+        student = student_registry.add_student(name, age, year, student_type="regular")
 
     print(f"Student added: {student}")
 
@@ -51,6 +65,15 @@ def show_reports():
 
         print(f"{student.name} | {course.course_name} | Grade: {grade}")
 
+def show_student_reports():
+    students = student_registry.get_all_students()
+    if not students:
+        print("No students in registry.")
+        return
+
+    for student in students:
+        print(student.generate_report())
+
 def calculate_average():
     if not enroll_manager.grades:
         print("No grades recorded.")
@@ -70,6 +93,7 @@ def menu():
         print("5. Show courses")
         print("6. Show reports")
         print("7. Calculate average grade")
+        print("8. Show student type reports")
         print("0. Exit")
 
         choice = input("Select option: ")
@@ -94,6 +118,9 @@ def menu():
 
         elif choice == '7':
             calculate_average()
+
+        elif choice == '8':
+            show_student_reports()
 
         elif choice == '0':
             answer = input("Are you sure you want to exit? (Yes/No): ").strip().lower()
