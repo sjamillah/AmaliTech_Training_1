@@ -27,13 +27,17 @@ class Student:
     
     @year.setter
     def year(self, value):
-        if not Student.is_valid_year(value):
-            raise ValueError("Year must be between 1 and 5")
+        if not self.is_valid_year(value):
+            raise ValueError(self.year_range_message())
         self._year = value
 
-    @staticmethod
-    def is_valid_year(year):
-        return 1 <= year <= 5
+    @classmethod
+    def is_valid_year(cls, year):
+        return 1 <= year <= 6
+
+    @classmethod
+    def year_range_message(cls):
+        return "Year must be between 1 and 6 for regular students"
 
     def __str__(self):
         return f"{self.name} of {self.age} years old is in the year {self.year}."
@@ -57,6 +61,14 @@ class UndergraduateStudent(Student):
     def generate_report(self):
         return f"Undergraduate {self.name} majors in {self.major}"
 
+    @classmethod
+    def is_valid_year(cls, year):
+        return 1 <= year <= 4
+
+    @classmethod
+    def year_range_message(cls):
+        return "Year must be between 1 and 4 for undergraduate students"
+
 class GraduateStudent(Student):
     def __init__(self, student_id, name, age, year, research_topic):
         super().__init__(student_id, name, age, year)
@@ -64,3 +76,11 @@ class GraduateStudent(Student):
 
     def generate_report(self):
         return f"Graduate {self.name} researches {self.research_topic}"
+
+    @classmethod
+    def is_valid_year(cls, year):
+        return 1 <= year <= 2
+
+    @classmethod
+    def year_range_message(cls):
+        return "Year must be between 1 and 2 for graduate students"

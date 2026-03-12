@@ -30,7 +30,7 @@ class StudentRegistry:
         return student
 
     def get_student(self, student_id):
-        """Return the list of registered students"""
+        """Return the individual student"""
         return self.students.get(student_id)
     
     def get_all_students(self):
