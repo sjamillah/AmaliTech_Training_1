@@ -54,3 +54,37 @@ def test_return_vehicle_calculates_actual_time_spent():
 
     assert price == pytest.approx(100000, rel=0.05)
     assert truck.is_available is True
+
+
+def test_rent_vehicle_rejects_invalid_unit():
+    service = RentalService()
+    car = Car()
+    service.add_vehicle(car)
+
+    price = service.rent_vehicle(0, 2, "days")
+
+    assert price is None
+    assert car.is_available is True
+
+
+def test_rent_vehicle_rejects_non_positive_duration():
+    service = RentalService()
+    bike = Bike()
+    service.add_vehicle(bike)
+
+    price = service.rent_vehicle(0, 0, "hours")
+
+    assert price is None
+    assert bike.is_available is True
+
+
+def test_return_vehicle_with_invalid_filtered_index_returns_none():
+    service = RentalService()
+    car = Car()
+    service.add_vehicle(car)
+    service.rent_vehicle(0, 30, "minutes")
+
+    returned_index = service.return_vehicle(1)
+
+    assert returned_index is None
+    assert car.is_available is False

@@ -32,6 +32,10 @@ class Vehicle(ABC):
             print(f"{self.vehicle_type} is not available")
             return None
 
+        if duration_minutes <= 0:
+            print("Duration must be greater than 0")
+            return None
+
         self._rented_at = datetime.now()
         self._rental_duration = timedelta(minutes=duration_minutes)
         self.is_available = False

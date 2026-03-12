@@ -4,16 +4,26 @@ from .vehicle import Car, Bike, Truck
 service = RentalService()
 
 
+def _invalid_input():
+    print("Invalid input")
+    return None
+
+
 def _get_vehicle_index(prompt, available_only=None):
     vehicles = service.show_vehicles(available_only)
     if not vehicles:
         return None
 
     try:
-        return int(input(prompt)) - 1
+        selected = int(input(prompt)) - 1
     except ValueError:
-        print("Invalid input")
+        return _invalid_input()
+
+    if selected < 0 or selected >= len(vehicles):
+        print("Invalid vehicle selection")
         return None
+
+    return selected
 
 
 def _get_rental_duration():
@@ -22,23 +32,26 @@ def _get_rental_duration():
     ).strip().lower()
 
     if not raw_duration:
-        print("Invalid input")
-        return None
+        return _invalid_input()
 
     parts = raw_duration.split()
+
+    if len(parts) > 2:
+        return _invalid_input()
 
     if len(parts) == 1:
         try:
             return int(parts[0]), "hours"
         except ValueError:
-            print("Invalid input")
-            return None
+            return _invalid_input()
 
     try:
         duration = int(parts[0])
     except ValueError:
-        print("Invalid input")
-        return None
+        return _invalid_input()
+
+    if len(parts) < 2:
+        return _invalid_input()
 
     unit = parts[1]
     return duration, unit
