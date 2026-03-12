@@ -10,4 +10,7 @@ class Enroll:
         return f"{self.student.name} in year {self.student.year} is enrolled in {self.course.course_name} (Facilitator: {self.course.course_facilitator})"
 
     def __repr__(self):
-        return f"Student(name={self.student.name!r}, year={self.student.year!r}, course={self.course.course_name!r}, Facilitator={self.course_facilitator!r})."
+        return (
+            f"Enroll(student={self.student.name!r}, year={self.student.year!r}, "
+            f"course={self.course.course_name!r}, facilitator={self.course.course_facilitator!r})"
+        )

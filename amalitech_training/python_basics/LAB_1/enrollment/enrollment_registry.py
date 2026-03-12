@@ -19,5 +19,12 @@ class EnrollmentRegistry:
 
         if enroll_info not in self.enrollments:
             raise ValueError("Student not enrolled in this course")
+
+        if not isinstance(grade, (int, float)):
+            raise ValueError("Grade must be a number")
+
+        if not 0 <= grade <= 100:
+            raise ValueError("Grade must be between 0 and 100")
         
         self.grades[enroll_info] = grade
+        return grade
