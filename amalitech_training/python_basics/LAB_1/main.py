@@ -7,9 +7,18 @@ course_registry = CourseRegistry()
 enroll_manager = EnrollmentRegistry()
 
 def add_student():
-    name = input("Student name: ").upper()
-    age = int(input("Age: "))
-    year = int(input("Year: "))
+    name = input("Student name: ").strip().upper()
+    if not name:
+        print("Student name is required")
+        return
+
+    try:
+        age = int(input("Age: "))
+        year = int(input("Year: "))
+    except ValueError:
+        print("Age and Year must be whole numbers")
+        return
+
     student_type = input("Student type (regular/undergraduate/graduate): ").strip().lower()
 
     if student_type == "undergraduate":
@@ -30,19 +39,35 @@ def add_student():
     print(f"Student added: {student}")
 
 def add_course():
-    code = input("Course code: ")
-    name = input("Course name: ")
-    facilitator = input("Facilitator: ")
+    code = input("Course code: ").strip().upper()
+    name = input("Course name: ").strip()
+    facilitator = input("Facilitator: ").strip()
+
+    if not code or not name or not facilitator:
+        print("Course code, name, and facilitator are required")
+        return
 
     course = course_registry.add_course(code, name, facilitator)
 
     print(f"Course added {course}")
 
 def enroll_student():
-    student_id = input("Student ID: ")
-    course_code = input("Course code: ")
+    student_id = input("Student ID: ").strip().upper()
+    course_code = input("Course code: ").strip().upper()
 
-    grade = float(input("Enter grade (0-100): "))
+    if not student_registry.get_student(student_id):
+        print("Student ID not found")
+        return
+
+    if not course_registry.get_course(course_code):
+        print("Course code not found")
+        return
+
+    try:
+        grade = float(input("Enter grade (0-100): "))
+    except ValueError:
+        print("Grade must be a number")
+        return
 
     enroll_manager.enroll_student(student_id, course_code)
     enroll_manager.assign_grade(student_id, course_code, grade)
@@ -62,6 +87,10 @@ def show_reports():
 
         student = student_registry.get_student(student_id)
         course = course_registry.get_course(course_code)
+
+        if not student or not course:
+            print(f"Skipping invalid report entry: {student_id} | {course_code}")
+            continue
 
         print(f"{student.name} | {course.course_name} | Grade: {grade}")
 
@@ -98,40 +127,43 @@ def menu():
 
         choice = input("Select option: ")
 
-        if choice == '1':
-            add_student()
+        try:
+            if choice == '1':
+                add_student()
 
-        elif choice == '2':
-            add_course()
+            elif choice == '2':
+                add_course()
 
-        elif choice == '3':
-            enroll_student()
+            elif choice == '3':
+                enroll_student()
 
-        elif choice == '4':
-            show_students()
+            elif choice == '4':
+                show_students()
 
-        elif choice == '5':
-            show_courses()
+            elif choice == '5':
+                show_courses()
 
-        elif choice == '6':
-            show_reports()
+            elif choice == '6':
+                show_reports()
 
-        elif choice == '7':
-            calculate_average()
+            elif choice == '7':
+                calculate_average()
 
-        elif choice == '8':
-            show_student_reports()
+            elif choice == '8':
+                show_student_reports()
 
-        elif choice == '0':
-            answer = input("Are you sure you want to exit? (Yes/No): ").strip().lower()
-            if answer == "yes":
-                print("Goodbye")
-                break
+            elif choice == '0':
+                answer = input("Are you sure you want to exit? (Yes/No): ").strip().lower()
+                if answer == "yes":
+                    print("Goodbye")
+                    break
+                else:
+                    print("Returning to menu....")
+
             else:
-                print("Returning to menu....")
-
-        else:
-            print("Invalid choice")
+                print("Invalid choice")
+        except ValueError as error:
+            print(f"Error: {error}")
 
 if __name__ == "__main__":
     menu()
