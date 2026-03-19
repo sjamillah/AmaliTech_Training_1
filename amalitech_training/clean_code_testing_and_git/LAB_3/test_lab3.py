@@ -13,6 +13,9 @@ from amalitech_training.clean_code_testing_and_git.LAB_3.interfaces import (
     UserRepository,
 )
 from amalitech_training.clean_code_testing_and_git.LAB_3.models import User
+from amalitech_training.clean_code_testing_and_git.LAB_3.password_hasher import (
+    BcryptPasswordHasher,
+)
 
 
 class TestCustomExceptions:
@@ -181,3 +184,59 @@ class TestPasswordHasherContract:
                 return p == h
 
         assert isinstance(Complete(), PasswordHasher)
+
+
+class PlainTextHasher(PasswordHasher):
+    """Fake hasher for tests that do not test hashing"""
+
+    def hash(self, raw_password: str) -> str:
+        return raw_password
+    
+    def verify(self, raw_password: str, hashed_password: str) -> bool:
+        return raw_password == hashed_password
+    
+
+class TestBcryptPasswordHasher:
+    """Test BcryptPasswordHasher satisfies the interface."""
+ 
+    def setup_method(self) -> None:
+        self.hasher = BcryptPasswordHasher()
+ 
+    def test_is_instance_of_password_hasher(self) -> None:
+        assert isinstance(self.hasher, PasswordHasher)
+ 
+    def test_hash_returns_a_string(self) -> None:
+        assert isinstance(self.hasher.hash('password123'), str)
+ 
+    def test_hash_is_not_equal_to_raw_password(self) -> None:
+        assert self.hasher.hash('password123') != 'password123'
+ 
+    def test_same_password_hashed_twice_differs(self) -> None:
+        # bcrypt generates a new random salt each time
+        h1 = self.hasher.hash('password123')
+        h2 = self.hasher.hash('password123')
+        assert h1 != h2
+ 
+    def test_verify_returns_true_for_correct_password(self) -> None:
+        hashed = self.hasher.hash('password123')
+        assert self.hasher.verify('password123', hashed) is True
+ 
+    def test_verify_returns_false_for_wrong_password(self) -> None:
+        hashed = self.hasher.hash('password123')
+        assert self.hasher.verify('wrongpassword', hashed) is False
+ 
+ 
+class TestPlainTextHasher:
+    """Verify the test helper itself works correctly."""
+ 
+    def setup_method(self) -> None:
+        self.hasher = PlainTextHasher()
+ 
+    def test_hash_returns_raw_password_unchanged(self) -> None:
+        assert self.hasher.hash('abc') == 'abc'
+ 
+    def test_verify_true_when_equal(self) -> None:
+        assert self.hasher.verify('abc', 'abc') is True
+ 
+    def test_verify_false_when_different(self) -> None:
+        assert self.hasher.verify('abc', 'xyz') is False
