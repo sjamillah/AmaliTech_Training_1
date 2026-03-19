@@ -76,3 +76,21 @@ class TestUserModel:
     def test_created_at_is_set_automatically(self) -> None:
         user = User(name="Jammy Jam", username="Jam_J", email="jammyj@gmail.com", hashed_password="jam")
         assert user.created_at is not None
+
+
+class TestUserRepositoryContract:
+    """Verify UserRepository blocks incomplete implementations."""
+ 
+    def test_cannot_instantiate_without_all_methods(self) -> None:
+        class Incomplete(UserRepository):
+            pass
+        with pytest.raises(TypeError):
+            Incomplete()  # type: ignore[abstract]
+ 
+    def test_complete_implementation_is_accepted(self) -> None:
+        class Complete(UserRepository):
+            def save(self, user: User) -> User: return user
+            def find_by_username(self, u: str) -> User | None: return None
+            def find_by_email(self, e: str) -> User | None: return None
+        assert isinstance(Complete(), UserRepository)
+
