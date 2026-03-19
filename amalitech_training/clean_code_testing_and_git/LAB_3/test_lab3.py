@@ -94,3 +94,18 @@ class TestUserRepositoryContract:
             def find_by_email(self, e: str) -> User | None: return None
         assert isinstance(Complete(), UserRepository)
 
+
+class TestPasswordHasherContract:
+    """Verify PasswordHasher blocks incomplete implementations."""
+ 
+    def test_cannot_instantiate_without_all_methods(self) -> None:
+        class Incomplete(PasswordHasher):
+            pass
+        with pytest.raises(TypeError):
+            Incomplete()  # type: ignore[abstract]
+ 
+    def test_complete_implementation_is_accepted(self) -> None:
+        class Complete(PasswordHasher):
+            def hash(self, p: str) -> str: return p
+            def verify(self, p: str, h: str) -> bool: return p == h
+        assert isinstance(Complete(), PasswordHasher)
