@@ -126,7 +126,7 @@ class TestUserRepositoryContract:
             def find_by_username(self, u: str) -> User | None:
                 return None
 
-            def find_by_email(self, e: str) -> User | None:
+            def find_by_email_or_phone(self, e: str) -> User | None:
                 return None
 
         assert isinstance(Complete(), UserRepository)
