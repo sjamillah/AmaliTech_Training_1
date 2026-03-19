@@ -107,6 +107,36 @@ class TestUserModel:
         )
         assert user.created_at is not None
 
+    def test_phone_is_normalized_to_digits(self) -> None:
+        user = User(
+            name="Jammy Jam",
+            username="Jam_J",
+            email_or_phone="+233 (20) 123-4567",
+            hashed_password="jam",
+        )
+        assert user.email_or_phone == "233201234567"
+
+    def test_deactivate_sets_user_inactive(self) -> None:
+        user = User(
+            name="Jammy Jam",
+            username="Jam_J",
+            email_or_phone="jammyj@gmail.com",
+            hashed_password="jam",
+        )
+        user.deactivate()
+        assert user.is_active is False
+
+    def test_activate_sets_user_active(self) -> None:
+        user = User(
+            name="Jammy Jam",
+            username="Jam_J",
+            email_or_phone="jammyj@gmail.com",
+            hashed_password="jam",
+        )
+        user.deactivate()
+        user.activate()
+        assert user.is_active is True
+
 
 class TestUserRepositoryContract:
     """Verify UserRepository blocks incomplete implementations."""
