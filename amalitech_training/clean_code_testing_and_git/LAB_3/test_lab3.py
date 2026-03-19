@@ -78,7 +78,7 @@ class TestUserModel:
             email_or_phone="JAMMYJ@GMAIL.COM",
             hashed_password="jam",
         )
-        assert user.email == "jammyj@gmail.com"
+        assert user.email_or_phone == "jammyj@gmail.com"
 
     def test_email_is_stripped_off_whitespace(self) -> None:
         user = User(
@@ -87,7 +87,7 @@ class TestUserModel:
             email_or_phone="  jammyj@gmail.com",
             hashed_password="jam",
         )
-        assert user.email == "jammyj@gmail.com"
+        assert user.email_or_phone == "jammyj@gmail.com"
 
     def test_is_active_is_true_by_default(self) -> None:
         user = User(
