@@ -7,6 +7,11 @@ from amalitech_training.clean_code_testing_and_git.LAB_3.exceptions import (
     UserAlreadyExistsError,
     UserNotFoundError,
 )
+from amalitech_training.clean_code_testing_and_git.LAB_3.interfaces import (
+    PasswordHasher,
+    UserRepository,
+)
+from amalitech_training.clean_code_testing_and_git.LAB_3.models import User
 
 
 class TestCustomExceptions:
@@ -41,3 +46,33 @@ class TestCustomExceptions:
         msg = "username already taken"
         error = UserAlreadyExistsError(msg)
         assert msg in str(error)
+
+
+class TestUserModel:
+    """
+    Verify User dataclass fields and normalization
+    """
+    
+    def test_username_is_lowercased(self) -> None:
+        user = User(name="Jammy Jam", username="Jam_J", email="jammyj@gmail.com", hashed_password="jam")
+        assert user.username == "jam_j"
+
+    def test_username_is_stripped_off_whitespace(self) -> None:
+        user = User(name="Jammy Jam", username=" Jam_J  ", email="jammyj@gmail.com", hashed_password="jam")
+        assert user.username == "jam_j"
+
+    def test_email_is_lowercased(self) -> None:
+        user = User(name="Jammy Jam", username="Jam_J", email="JAMMYJ@GMAIL.COM", hashed_password="jam")
+        assert user.email == "jammyj@gmail.com"
+
+    def test_email_is_stripped_off_whitespace(self) -> None:
+        user = User(name="Jammy Jam", username="Jam_J", email="  jammyj@gmail.com", hashed_password="jam")
+        assert user.email == "jammyj@gmail.com"
+
+    def test_is_active_is_true_by_default(self) -> None:
+        user = User(name="Jammy Jam", username="Jam_J", email="jammyj@gmail.com", hashed_password="jam")
+        assert user.is_active == True
+
+    def test_created_at_is_set_automatically(self) -> None:
+        user = User(name="Jammy Jam", username="Jam_J", email="jammyj@gmail.com", hashed_password="jam")
+        assert user.created_at is not None
