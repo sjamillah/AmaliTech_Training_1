@@ -429,7 +429,7 @@ class TestUserServiceLogin:
 
     def test_login_returns_user_with_correct_email(self) -> None:
         user = self.service.login(username="joshua_a", password="secure123")
-        assert user.email == "j@example.com"
+        assert user.email_or_phone == "j@example.com"
 
     def test_unknown_username_raises_user_not_found(self) -> None:
         with pytest.raises(UserNotFoundError):
