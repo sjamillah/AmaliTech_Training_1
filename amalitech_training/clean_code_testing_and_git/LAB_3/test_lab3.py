@@ -183,6 +183,20 @@ class TestUserRepositoryContract:
 class TestInMemoryUserRepository:
     """Verify in-memory repository lookup behavior."""
 
+    def test_find_by_username_normalizes_input(self) -> None:
+        repo = InMemoryUserRepository()
+        user = User(
+            name="Jammy Jam",
+            username="Jam_J",
+            email_or_phone="jammyj@gmail.com",
+            hashed_password="hashed",
+        )
+        repo.save(user)
+
+        found = repo.find_by_username("  JAM_J  ")
+        assert found is not None
+        assert found.username == "jam_j"
+
     def test_find_by_phone_accepts_formatted_input(self) -> None:
         repo = InMemoryUserRepository()
         user = User(
@@ -196,6 +210,27 @@ class TestInMemoryUserRepository:
         found = repo.find_by_email_or_phone("+233 20 123 4567")
         assert found is not None
         assert found.username == "jam_j"
+
+    def test_find_by_email_or_phone_iterates_until_match(self) -> None:
+        repo = InMemoryUserRepository()
+        first = User(
+            name="First User",
+            username="first_user",
+            email_or_phone="first@example.com",
+            hashed_password="hashed",
+        )
+        second = User(
+            name="Second User",
+            username="second_user",
+            email_or_phone="second@example.com",
+            hashed_password="hashed",
+        )
+        repo.save(first)
+        repo.save(second)
+
+        found = repo.find_by_email_or_phone("SECOND@EXAMPLE.COM")
+        assert found is not None
+        assert found.username == "second_user"
 
 
 class TestPasswordHasherContract:
