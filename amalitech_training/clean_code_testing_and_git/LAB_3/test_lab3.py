@@ -13,6 +13,9 @@ from amalitech_training.clean_code_testing_and_git.LAB_3.interfaces import (
     UserRepository,
 )
 from amalitech_training.clean_code_testing_and_git.LAB_3.models import User
+from amalitech_training.clean_code_testing_and_git.LAB_3.password_hasher import (
+    BcryptPasswordHasher,
+)
 
 
 class TestCustomExceptions:
@@ -181,3 +184,21 @@ class TestPasswordHasherContract:
                 return p == h
 
         assert isinstance(Complete(), PasswordHasher)
+
+
+class TestBcryptPasswordHasher:
+    """Verify concrete bcrypt hasher behavior."""
+
+    def test_hash_returns_string_and_not_raw_password(self) -> None:
+        hasher = BcryptPasswordHasher()
+        hashed = hasher.hash("secret123")
+
+        assert isinstance(hashed, str)
+        assert hashed != "secret123"
+
+    def test_verify_returns_true_for_match_and_false_for_mismatch(self) -> None:
+        hasher = BcryptPasswordHasher()
+        hashed = hasher.hash("secret123")
+
+        assert hasher.verify("secret123", hashed) is True
+        assert hasher.verify("wrong-password", hashed) is False
