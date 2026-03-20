@@ -16,6 +16,21 @@ from amalitech_training.clean_code_testing_and_git.LAB_3.models import User
 from amalitech_training.clean_code_testing_and_git.LAB_3.password_hasher import (
     BcryptPasswordHasher,
 )
+from amalitech_training.clean_code_testing_and_git.LAB_3.repositories import (
+    InMemoryUserRepository,
+)
+from amalitech_training.clean_code_testing_and_git.LAB_3.user_service import (
+    MIN_PASSWORD_LENGTH,
+    UserService,
+)
+
+
+def make_service() -> UserService:
+    """Return a fresh UserService backed by in-memory fakes"""
+    return UserService(
+        repository=InMemoryUserRepository(),
+        hasher=PlainTextHasher(),
+    )
 
 
 class TestCustomExceptions:
@@ -202,3 +217,131 @@ class TestBcryptPasswordHasher:
 
         assert hasher.verify("secret123", hashed) is True
         assert hasher.verify("wrong-password", hashed) is False
+
+
+class TestUserServiceRegister:
+
+    def setup_method(self) -> None:
+        self.service = make_service()
+
+    def test_register_returns_user_with_correct_username(self) -> None:
+        user = self.service.register(
+            name="Joshua Alana",
+            username="joshua_a",
+            email="j@example.com",
+            password="secure123",
+            confirm_password="secure123",
+        )
+        assert user.username == "joshua_a"
+
+    def test_register_returns_user_with_correct_email(self) -> None:
+        user = self.service.register(
+            name="Joshua Alana",
+            username="joshua_a",
+            email="j@example.com",
+            password="secure123",
+            confirm_password="secure123",
+        )
+        assert user.email == "j@example.com"
+
+    def test_register_does_not_store_raw_password(self) -> None:
+        user = self.service.register(
+            name="Joshua Alana",
+            username="joshua_a",
+            email="j@example.com",
+            password="secure123",
+            confirm_password="secure123",
+        )
+        assert user.hashed_password is not None
+        assert user.hashed_password != ""
+
+    def test_register_sets_user_active_by_default(self) -> None:
+        user = self.service.register(
+            name="Joshua Alana",
+            username="joshua_a",
+            email="j@example.com",
+            password="secure123",
+            confirm_password="secure123",
+        )
+        assert user.is_active is True
+
+    def test_mismatched_passwords_raise_invalid_password_error(self) -> None:
+        with pytest.raises(InvalidPasswordError):
+            self.service.register(
+                name="Joshua Alana",
+                username="joshua_a",
+                email="j@example.com",
+                password="secure123",
+                confirm_password="different456",
+            )
+
+    def test_password_too_short_raises_invalid_password_error(self) -> None:
+        short = "x" * (MIN_PASSWORD_LENGTH - 1)
+        with pytest.raises(InvalidPasswordError):
+            self.service.register(
+                name="Joshua Alana",
+                username="joshua_a",
+                email="j@example.com",
+                password=short,
+                confirm_password=short,
+            )
+
+    def test_password_at_minimum_length_is_accepted(self) -> None:
+        exact = "x" * MIN_PASSWORD_LENGTH
+        user = self.service.register(
+            name="Joshua Alana",
+            username="joshua_a",
+            email="j@example.com",
+            password=exact,
+            confirm_password=exact,
+        )
+        assert user.username == "joshua_a"
+
+    def test_duplicate_username_raises_user_already_exists(self) -> None:
+        self.service.register(
+            name="Joshua Alana",
+            username="joshua_a",
+            email="j@example.com",
+            password="secure123",
+            confirm_password="secure123",
+        )
+        with pytest.raises(UserAlreadyExistsError):
+            self.service.register(
+                name="Another",
+                username="joshua_a",
+                email="another@example.com",
+                password="secure123",
+                confirm_password="secure123",
+            )
+
+    def test_duplicate_email_raises_user_already_exists(self) -> None:
+        self.service.register(
+            name="Joshua Alana",
+            username="joshua_a",
+            email="shared@example.com",
+            password="secure123",
+            confirm_password="secure123",
+        )
+        with pytest.raises(UserAlreadyExistsError):
+            self.service.register(
+                name="Another",
+                username="another_user",
+                email="shared@example.com",
+                password="secure123",
+                confirm_password="secure123",
+            )
+
+    def test_repository_save_not_called_on_password_mismatch(
+        self, mocker: pytest.FixtureRequest
+    ) -> None:
+        mock_repo = mocker.MagicMock(spec=UserRepository)
+        service = UserService(repository=mock_repo, hasher=PlainTextHasher())
+        with pytest.raises(InvalidPasswordError):
+            service.register(
+                name="Joshua Alana",
+                username="joshua_a",
+                email="j@example.com",
+                password="secure123",
+                confirm_password="wrong",
+            )
+        mock_repo.save.assert_not_called()
