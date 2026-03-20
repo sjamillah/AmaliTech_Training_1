@@ -219,6 +219,16 @@ class TestBcryptPasswordHasher:
         assert hasher.verify("wrong-password", hashed) is False
 
 
+class PlainTextHasher(PasswordHasher):
+    """Simple deterministic hasher used in unit tests only."""
+
+    def hash(self, raw_password: str) -> str:
+        return f"plain::{raw_password}"
+
+    def verify(self, raw_password: str, hashed_password: str) -> bool:
+        return hashed_password == self.hash(raw_password)
+
+
 class TestUserServiceRegister:
 
     def setup_method(self) -> None:
