@@ -1,6 +1,7 @@
 from amalitech_training.clean_code_testing_and_git.LAB_3.exceptions import (
     InvalidPasswordError,
     UserAlreadyExistsError,
+    UserNotFoundError,
 )
 from amalitech_training.clean_code_testing_and_git.LAB_3.interfaces import (
     PasswordHasher,
@@ -62,3 +63,25 @@ class UserService:
                 f'Password must be at least {MIN_PASSWORD_LENGTH} characters. '
                 f'You entered {len(password)}.'
             )
+        
+    def login(self, username: str, password: str) -> User:
+        """
+        Verify credentials and return the authenticated User.
+ 
+        Order: find user -> raise if not found -> verify password
+               -> raise if wrong -> return user.
+ 
+        Raises:
+            UserNotFoundError: if username does not exist.
+            InvalidPasswordError: if password does not match hash.
+        """
+        user = self._repository.find_by_username(username)
+        if user is None:
+            raise UserNotFoundError(
+                f"No user found with username '{username}'."
+            )
+        if not self._hasher.verify(password, user.hashed_password):
+            raise InvalidPasswordError(
+                f"Invalid password for user '{username}'."
+            )
+        return user
