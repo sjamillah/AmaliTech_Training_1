@@ -69,7 +69,7 @@ class RentalService:
                 print("Duration must be greater than 0")
                 return
 
-            vehicle.rent(duration_minutes)
+            return vehicle.rent(duration_minutes)
 
         except IndexError:
             print("Invalid vehicle selection")
