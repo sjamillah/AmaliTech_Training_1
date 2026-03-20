@@ -180,6 +180,24 @@ class TestUserRepositoryContract:
         assert isinstance(Complete(), UserRepository)
 
 
+class TestInMemoryUserRepository:
+    """Verify in-memory repository lookup behavior."""
+
+    def test_find_by_phone_accepts_formatted_input(self) -> None:
+        repo = InMemoryUserRepository()
+        user = User(
+            name="Jammy Jam",
+            username="jam_j",
+            email_or_phone="+233 (20) 123-4567",
+            hashed_password="hashed",
+        )
+        repo.save(user)
+
+        found = repo.find_by_email_or_phone("+233 20 123 4567")
+        assert found is not None
+        assert found.username == "jam_j"
+
+
 class TestPasswordHasherContract:
     """Verify PasswordHasher blocks incomplete implementations."""
 
@@ -238,27 +256,27 @@ class TestUserServiceRegister:
         user = self.service.register(
             name="Joshua Alana",
             username="joshua_a",
-            email="j@example.com",
+            email_or_phone="j@example.com",
             password="secure123",
             confirm_password="secure123",
         )
         assert user.username == "joshua_a"
 
-    def test_register_returns_user_with_correct_email(self) -> None:
+    def test_register_returns_user_with_correct_email_or_phone(self) -> None:
         user = self.service.register(
             name="Joshua Alana",
             username="joshua_a",
-            email="j@example.com",
+            email_or_phone="j@example.com",
             password="secure123",
             confirm_password="secure123",
         )
-        assert user.email == "j@example.com"
+        assert user.email_or_phone == "j@example.com"
 
     def test_register_does_not_store_raw_password(self) -> None:
         user = self.service.register(
             name="Joshua Alana",
             username="joshua_a",
-            email="j@example.com",
+            email_or_phone="j@example.com",
             password="secure123",
             confirm_password="secure123",
         )
@@ -269,7 +287,7 @@ class TestUserServiceRegister:
         user = self.service.register(
             name="Joshua Alana",
             username="joshua_a",
-            email="j@example.com",
+            email_or_phone="j@example.com",
             password="secure123",
             confirm_password="secure123",
         )
@@ -280,7 +298,7 @@ class TestUserServiceRegister:
             self.service.register(
                 name="Joshua Alana",
                 username="joshua_a",
-                email="j@example.com",
+                email_or_phone="j@example.com",
                 password="secure123",
                 confirm_password="different456",
             )
@@ -291,7 +309,7 @@ class TestUserServiceRegister:
             self.service.register(
                 name="Joshua Alana",
                 username="joshua_a",
-                email="j@example.com",
+                email_or_phone="j@example.com",
                 password=short,
                 confirm_password=short,
             )
@@ -301,7 +319,7 @@ class TestUserServiceRegister:
         user = self.service.register(
             name="Joshua Alana",
             username="joshua_a",
-            email="j@example.com",
+            email_or_phone="j@example.com",
             password=exact,
             confirm_password=exact,
         )
@@ -311,7 +329,7 @@ class TestUserServiceRegister:
         self.service.register(
             name="Joshua Alana",
             username="joshua_a",
-            email="j@example.com",
+            email_or_phone="j@example.com",
             password="secure123",
             confirm_password="secure123",
         )
@@ -319,16 +337,16 @@ class TestUserServiceRegister:
             self.service.register(
                 name="Another",
                 username="joshua_a",
-                email="another@example.com",
+                email_or_phone="another@example.com",
                 password="secure123",
                 confirm_password="secure123",
             )
 
-    def test_duplicate_email_raises_user_already_exists(self) -> None:
+    def test_duplicate_email_or_phone_raises_user_already_exists(self) -> None:
         self.service.register(
             name="Joshua Alana",
             username="joshua_a",
-            email="shared@example.com",
+            email_or_phone="shared@example.com",
             password="secure123",
             confirm_password="secure123",
         )
@@ -336,7 +354,7 @@ class TestUserServiceRegister:
             self.service.register(
                 name="Another",
                 username="another_user",
-                email="shared@example.com",
+                email_or_phone="shared@example.com",
                 password="secure123",
                 confirm_password="secure123",
             )
@@ -350,7 +368,7 @@ class TestUserServiceRegister:
             service.register(
                 name="Joshua Alana",
                 username="joshua_a",
-                email="j@example.com",
+                email_or_phone="j@example.com",
                 password="secure123",
                 confirm_password="wrong",
             )
