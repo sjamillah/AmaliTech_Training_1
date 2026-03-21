@@ -470,69 +470,77 @@ class TestUserServiceLogin:
 
 
 class TestUserServiceLogging:
- 
+
     def setup_method(self) -> None:
         self.service = make_service()
- 
+
     def test_successful_registration_logs_info(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         with caplog.at_level(logging.INFO):
             self.service.register(
-                name='Joshua Alana', username='joshua_a',
-                email_or_phone='j@example.com', password='secure123',
-                confirm_password='secure123',
+                name="Joshua Alana",
+                username="joshua_a",
+                email_or_phone="j@example.com",
+                password="secure123",
+                confirm_password="secure123",
             )
-        assert 'joshua_a' in caplog.text
+        assert "joshua_a" in caplog.text
         assert any(r.levelno == logging.INFO for r in caplog.records)
- 
+
     def test_duplicate_registration_logs_warning(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         self.service.register(
-            name='Joshua Alana', username='joshua_a',
-            email_or_phone='j@example.com', password='secure123',
-            confirm_password='secure123',
+            name="Joshua Alana",
+            username="joshua_a",
+            email_or_phone="j@example.com",
+            password="secure123",
+            confirm_password="secure123",
         )
         with caplog.at_level(logging.WARNING):
             with pytest.raises(UserAlreadyExistsError):
                 self.service.register(
-                    name='Another', username='joshua_a',
-                    email_or_phone='another@example.com', password='secure123',
-                    confirm_password='secure123',
+                    name="Another",
+                    username="joshua_a",
+                    email_or_phone="another@example.com",
+                    password="secure123",
+                    confirm_password="secure123",
                 )
         assert any(r.levelno == logging.WARNING for r in caplog.records)
- 
-    def test_successful_login_logs_info(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
+
+    def test_successful_login_logs_info(self, caplog: pytest.LogCaptureFixture) -> None:
         self.service.register(
-            name='Joshua Alana', username='joshua_a',
-            email_or_phone='j@example.com', password='secure123',
-            confirm_password='secure123',
+            name="Joshua Alana",
+            username="joshua_a",
+            email_or_phone="j@example.com",
+            password="secure123",
+            confirm_password="secure123",
         )
         with caplog.at_level(logging.INFO):
-            self.service.login(username='joshua_a', password='secure123')
-        assert 'joshua_a' in caplog.text
+            self.service.login(username="joshua_a", password="secure123")
+        assert "joshua_a" in caplog.text
         assert any(r.levelno == logging.INFO for r in caplog.records)
- 
+
     def test_user_not_found_login_logs_warning(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         with caplog.at_level(logging.WARNING):
             with pytest.raises(UserNotFoundError):
-                self.service.login(username='ghost', password='x')
+                self.service.login(username="ghost", password="x")
         assert any(r.levelno == logging.WARNING for r in caplog.records)
- 
+
     def test_wrong_password_login_logs_warning(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         self.service.register(
-            name='Joshua Alana', username='joshua_a',
-            email_or_phone='j@example.com', password='secure123',
-            confirm_password='secure123',
+            name="Joshua Alana",
+            username="joshua_a",
+            email_or_phone="j@example.com",
+            password="secure123",
+            confirm_password="secure123",
         )
         with caplog.at_level(logging.WARNING):
             with pytest.raises(InvalidPasswordError):
-                self.service.login(username='joshua_a', password='wrongpass')
+                self.service.login(username="joshua_a", password="wrongpass")
         assert any(r.levelno == logging.WARNING for r in caplog.records)
