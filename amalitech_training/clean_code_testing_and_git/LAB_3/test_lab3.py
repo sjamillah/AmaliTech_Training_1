@@ -284,7 +284,6 @@ class PlainTextHasher(PasswordHasher):
 
 
 class TestUserServiceRegister:
-
     def setup_method(self) -> None:
         self.service = make_service()
 
@@ -412,7 +411,6 @@ class TestUserServiceRegister:
 
 
 class TestUserServiceLogin:
-
     def setup_method(self) -> None:
         self.service = make_service()
         # Register a user before each test so login has someone to find
@@ -470,7 +468,6 @@ class TestUserServiceLogin:
 
 
 class TestUserServiceLogging:
-
     def setup_method(self) -> None:
         self.service = make_service()
 
