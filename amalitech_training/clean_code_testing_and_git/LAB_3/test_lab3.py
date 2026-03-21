@@ -408,3 +408,61 @@ class TestUserServiceRegister:
                 confirm_password="wrong",
             )
         mock_repo.save.assert_not_called()
+
+
+class TestUserServiceLogin:
+
+    def setup_method(self) -> None:
+        self.service = make_service()
+        # Register a user before each test so login has someone to find
+        self.service.register(
+            name="Joshua Alana",
+            username="joshua_a",
+            email_or_phone="j@example.com",
+            password="secure123",
+            confirm_password="secure123",
+        )
+
+    def test_correct_credentials_return_user(self) -> None:
+        user = self.service.login(username="joshua_a", password="secure123")
+        assert user.username == "joshua_a"
+
+    def test_login_returns_user_with_correct_email(self) -> None:
+        user = self.service.login(username="joshua_a", password="secure123")
+        assert user.email_or_phone == "j@example.com"
+
+    def test_unknown_username_raises_user_not_found(self) -> None:
+        with pytest.raises(UserNotFoundError):
+            self.service.login(username="ghost", password="secure123")
+
+    def test_wrong_password_raises_invalid_password_error(self) -> None:
+        with pytest.raises(InvalidPasswordError):
+            self.service.login(username="joshua_a", password="wrongpass")
+
+    def test_verify_not_called_when_user_not_found(
+        self, mocker: pytest.FixtureRequest
+    ) -> None:
+        mock_repo = mocker.MagicMock(spec=UserRepository)
+        mock_repo.find_by_username.return_value = None
+        mock_hasher = mocker.MagicMock(spec=PasswordHasher)
+        service = UserService(repository=mock_repo, hasher=mock_hasher)
+        with pytest.raises(UserNotFoundError):
+            service.login(username="ghost", password="anything")
+        mock_hasher.verify.assert_not_called()
+
+    def test_find_by_username_called_once_per_login(
+        self, mocker: pytest.FixtureRequest
+    ) -> None:
+        stored = User(
+            name="Joshua Alana",
+            username="joshua_a",
+            email_or_phone="j@example.com",
+            hashed_password="secure123",
+        )
+        mock_repo = mocker.MagicMock(spec=UserRepository)
+        mock_repo.find_by_username.return_value = stored
+        mock_hasher = mocker.MagicMock(spec=PasswordHasher)
+        mock_hasher.verify.return_value = True
+        service = UserService(repository=mock_repo, hasher=mock_hasher)
+        service.login(username="joshua_a", password="secure123")
+        mock_repo.find_by_username.assert_called_once_with("joshua_a")
