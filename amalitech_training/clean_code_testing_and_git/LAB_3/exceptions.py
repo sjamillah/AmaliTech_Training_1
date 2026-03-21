@@ -1,6 +1,8 @@
 """
 Custom exceptions for the User Authentication Service Module
 """
+
+
 class UserAlreadyExistsError(Exception):
     """
     Raised when registration uses a username or email that is in the system
@@ -25,4 +27,3 @@ class InvalidPasswordError(Exception):
         Registration: password != confirm_password or password is shorter than minimal length
         Login: the username exists but the password does not match the stored hash
     """
-    

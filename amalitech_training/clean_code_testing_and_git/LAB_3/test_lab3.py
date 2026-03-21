@@ -4,6 +4,7 @@ Test file for the User Authentication Service Module
 
 import pytest
 import logging
+from pytest_mock import MockerFixture
 from amalitech_training.clean_code_testing_and_git.LAB_3.exceptions import (
     InvalidPasswordError,
     UserAlreadyExistsError,
@@ -284,7 +285,6 @@ class PlainTextHasher(PasswordHasher):
 
 
 class TestUserServiceRegister:
-
     def setup_method(self) -> None:
         self.service = make_service()
 
@@ -396,7 +396,7 @@ class TestUserServiceRegister:
             )
 
     def test_repository_save_not_called_on_password_mismatch(
-        self, mocker: pytest.FixtureRequest
+        self, mocker: MockerFixture
     ) -> None:
         mock_repo = mocker.MagicMock(spec=UserRepository)
         service = UserService(repository=mock_repo, hasher=PlainTextHasher())
@@ -412,7 +412,6 @@ class TestUserServiceRegister:
 
 
 class TestUserServiceLogin:
-
     def setup_method(self) -> None:
         self.service = make_service()
         # Register a user before each test so login has someone to find
@@ -441,7 +440,7 @@ class TestUserServiceLogin:
             self.service.login(username="joshua_a", password="wrongpass")
 
     def test_verify_not_called_when_user_not_found(
-        self, mocker: pytest.FixtureRequest
+        self, mocker: MockerFixture
     ) -> None:
         mock_repo = mocker.MagicMock(spec=UserRepository)
         mock_repo.find_by_username.return_value = None
@@ -452,7 +451,7 @@ class TestUserServiceLogin:
         mock_hasher.verify.assert_not_called()
 
     def test_find_by_username_called_once_per_login(
-        self, mocker: pytest.FixtureRequest
+        self, mocker: MockerFixture
     ) -> None:
         stored = User(
             name="Joshua Alana",
@@ -470,7 +469,6 @@ class TestUserServiceLogin:
 
 
 class TestUserServiceLogging:
-
     def setup_method(self) -> None:
         self.service = make_service()
 
