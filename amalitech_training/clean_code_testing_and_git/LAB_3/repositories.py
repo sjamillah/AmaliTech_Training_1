@@ -1,7 +1,11 @@
 import re
 
-from amalitech_training.clean_code_testing_and_git.LAB_3.exceptions import UserAlreadyExistsError
-from amalitech_training.clean_code_testing_and_git.LAB_3.interfaces import UserRepository
+from amalitech_training.clean_code_testing_and_git.LAB_3.exceptions import (
+    UserAlreadyExistsError,
+)
+from amalitech_training.clean_code_testing_and_git.LAB_3.interfaces import (
+    UserRepository,
+)
 from amalitech_training.clean_code_testing_and_git.LAB_3.models import User
 
 
@@ -9,10 +13,10 @@ class InMemoryUserRepository(UserRepository):
     """
     Stores the users in a dict. Data is lost on the process exit.
     """
-    
+
     def __init__(self) -> None:
         self._store: dict[str, User] = {}  # key = lowercase username
- 
+
     def save(self, user: User) -> User:
         """Persist user. Raises UserAlreadyExistsError on duplicate."""
         if user.username in self._store:
@@ -25,10 +29,10 @@ class InMemoryUserRepository(UserRepository):
             )
         self._store[user.username] = user
         return user
- 
+
     def find_by_username(self, username: str) -> User | None:
         return self._store.get(username.lower().strip())
- 
+
     def find_by_email_or_phone(self, email_or_phone: str) -> User | None:
         if User.is_email(email_or_phone):
             normalised = email_or_phone.lower().strip()

@@ -91,6 +91,6 @@ class UserService:
         if not self._hasher.verify(password, user.hashed_password):
             logger.warning("Login failed. Invalid password for: '%s'", username)
             raise InvalidPasswordError(...)
-        
+
         logger.info("Login successful: '%s'", user.username)
         return user

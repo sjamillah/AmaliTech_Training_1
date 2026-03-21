@@ -19,7 +19,6 @@ class UserRepository(ABC):
         """
         ...
 
-
     @abstractmethod
     def find_by_username(self, username: str) -> Optional[User]:
         """
@@ -28,7 +27,6 @@ class UserRepository(ABC):
         Returns None if not found
         """
         ...
-
 
     @abstractmethod
     def find_by_email_or_phone(self, email_or_phone: str) -> Optional[User]:
@@ -53,7 +51,6 @@ class PasswordHasher(ABC):
         Must be one-way; the original password cannot be recovered.
         """
         ...
-
 
     @abstractmethod
     def verify(self, raw_password: str, hashed_password: str) -> bool:
