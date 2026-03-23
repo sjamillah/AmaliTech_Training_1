@@ -259,7 +259,10 @@ class TestCsvImporter:
 
 
 class TestCli:
+    """Tests for command-line behavior and exit status handling."""
+
     def test_success_exits_zero(self, tmp_path: Path) -> None:
+        """Verify CLI returns exit code 0 for a successful import run."""
         csv = tmp_path / "u.csv"
         csv.write_text("user_id,name,email\n1,Joshua,j@ex.com")
         db = tmp_path / "db.json"
@@ -267,17 +270,19 @@ class TestCli:
         assert main([str(csv), "--db", str(db)]) == 0
  
     def test_missing_file_exits_one(self, tmp_path: Path) -> None:
+        """Verify CLI returns exit code 1 when the CSV file is missing."""
         db = tmp_path / "db.json"
         db.write_text("{}")
         assert main([str(tmp_path / "nope.csv"), "--db", str(db)]) == 1
  
     def test_calls_importer(self, tmp_path: Path, mocker) -> None:
+        """Ensure the CLI invokes importer.run exactly once for a valid input."""
         csv = tmp_path / "u.csv"
         csv.write_text("user_id,name,email\n1,J,j@ex.com")
         mock_imp = mocker.MagicMock()
         mock_imp.run.return_value = ImportResult(imported=1)
         mocker.patch(
-            "amalitech_training.clean_code_testing_and_git.LAB_1.csv_cli.CsvImporter",
+            "amalitech_training.clean_code_testing_and_git.LAB_1.main.CsvImporter",
             return_value=mock_imp,
         )
         main([str(csv)])
