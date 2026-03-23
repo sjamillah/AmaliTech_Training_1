@@ -11,6 +11,7 @@ from .exceptions import (
 from .models import User
 from pathlib import Path
 from .parser import CsvParser
+from .validator import CsvValidator
 
 
 class TestExceptions:
@@ -100,4 +101,47 @@ class TestCsvParser:
         p = tmp_path / "t.csv"
         p.write_text(f"user_id,name,email\n{data}")
         assert len(list(CsvParser().parse(p))) == expected
+
+
+class TestCsvValidator:
+    """Tests for CSV row validation rules and expected exceptions."""
+
+    def setup_method(self) -> None:
+        """Create a fresh validator instance for each test."""
+        self.v = CsvValidator()
+ 
+    def test_valid_row_returns_user(self) -> None:
+        """Ensure a valid row is converted into a User object."""
+        u = self.v.validate({"user_id":"1","name":"Joshua","email":"j@ex.com"})
+        assert u.user_id == 1 and u.name == "Joshua"
+ 
+    @pytest.mark.parametrize("field", ["user_id", "name", "email"])
+    def test_missing_field_raises(self, field: str) -> None:
+        """Verify that removing any required field raises MissingFieldError."""
+        row = {"user_id":"1","name":"Joshua","email":"j@ex.com"}
+        del row[field]
+        with pytest.raises(MissingFieldError):
+            self.v.validate(row)
+ 
+    @pytest.mark.parametrize("bad", ["abc", "0", "-1", ""])
+    def test_bad_user_id_raises(self, bad: str) -> None:
+        """Confirm invalid user_id values raise ValidationError."""
+        with pytest.raises(ValidationError):
+            self.v.validate({"user_id":bad,"name":"J","email":"j@ex.com"})
+ 
+    def test_blank_name_raises(self) -> None:
+        """Ensure blank or whitespace-only names are rejected."""
+        with pytest.raises(ValidationError):
+            self.v.validate({"user_id":"1","name":"  ","email":"j@ex.com"})
+ 
+    @pytest.mark.parametrize("bad", ["notanemail","missing@","","nodot"])
+    def test_bad_email_raises(self, bad: str) -> None:
+        """Verify malformed emails raise InvalidEmailError."""
+        with pytest.raises(InvalidEmailError):
+            self.v.validate({"user_id":"1","name":"J","email":bad})
+ 
+    def test_invalid_email_also_caught_as_validation_error(self) -> None:
+        """Confirm invalid email errors are also caught by ValidationError."""
+        with pytest.raises(ValidationError):
+            self.v.validate({"user_id":"1","name":"J","email":"bad"})
 
