@@ -15,7 +15,7 @@ from .parser import CsvParser
 from .validator import CsvValidator
 from .repository import JsonRepository
 from .importer import CsvImporter, ImportResult
-from .main import main
+from . import main as cli_main
 
 
 class TestExceptions:
@@ -267,13 +267,13 @@ class TestCli:
         csv.write_text("user_id,name,email\n1,Joshua,j@ex.com")
         db = tmp_path / "db.json"
         db.write_text("{}")
-        assert main([str(csv), "--db", str(db)]) == 0
+        assert cli_main.main([str(csv), "--db", str(db)]) == 0
  
     def test_missing_file_exits_one(self, tmp_path: Path) -> None:
         """Verify CLI returns exit code 1 when the CSV file is missing."""
         db = tmp_path / "db.json"
         db.write_text("{}")
-        assert main([str(tmp_path / "nope.csv"), "--db", str(db)]) == 1
+        assert cli_main.main([str(tmp_path / "nope.csv"), "--db", str(db)]) == 1
  
     def test_calls_importer(self, tmp_path: Path, mocker) -> None:
         """Ensure the CLI invokes importer.run exactly once for a valid input."""
@@ -281,10 +281,7 @@ class TestCli:
         csv.write_text("user_id,name,email\n1,J,j@ex.com")
         mock_imp = mocker.MagicMock()
         mock_imp.run.return_value = ImportResult(imported=1)
-        mocker.patch(
-            "amalitech_training.clean_code_testing_and_git.LAB_1.main.CsvImporter",
-            return_value=mock_imp,
-        )
-        main([str(csv)])
+        mocker.patch.object(cli_main, "CsvImporter", return_value=mock_imp)
+        cli_main.main([str(csv)])
         mock_imp.run.assert_called_once()
 
