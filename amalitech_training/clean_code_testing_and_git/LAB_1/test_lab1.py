@@ -9,6 +9,8 @@ from .exceptions import (
         ValidationError,
     )
 from .models import User
+from pathlib import Path
+from .parser import CsvParser
 
 
 class TestExceptions:
@@ -53,4 +55,49 @@ class TestUser:
         """Confirm the string representation includes the user's name."""
         u = User(1, "Joshua", "j@example.com")
         assert "Joshua" in repr(u)
+
+
+@pytest.fixture
+def valid_csv(tmp_path: Path) -> Path:
+    """Create a temporary CSV file with two valid user rows."""
+    p = tmp_path / "users.csv"
+    p.write_text("user_id,name,email\n1,Joshua,j@ex.com\n2,Lynn,l@ex.com")
+    return p
+ 
+
+class TestCsvParser:
+    """Tests for CSV parsing behavior and file handling edge cases."""
+
+    def test_yields_correct_row_count(self, valid_csv: Path) -> None:
+        """Ensure parsing a valid file yields the expected number of rows."""
+        rows = list(CsvParser().parse(valid_csv))
+        assert len(rows) == 2
+ 
+    def test_row_has_correct_values(self, valid_csv: Path) -> None:
+        """Verify parsed row dictionaries contain correct field values."""
+        row = list(CsvParser().parse(valid_csv))[0]
+        assert row["user_id"] == "1"
+        assert row["name"] == "Joshua"
+ 
+    def test_missing_file_raises(self, tmp_path: Path) -> None:
+        """Confirm parsing a missing CSV path raises FileFormatError."""
+        with pytest.raises(FileFormatError):
+            list(CsvParser().parse(tmp_path / "nope.csv"))
+ 
+    def test_empty_body_yields_nothing(self, tmp_path: Path) -> None:
+        """Ensure a header-only CSV produces no parsed data rows."""
+        p = tmp_path / "e.csv"
+        p.write_text("user_id,name,email\n")
+        assert list(CsvParser().parse(p)) == []
+ 
+    @pytest.mark.parametrize("data,expected", [
+        ("1,A,a@b.com", 1),
+        ("1,A,a@b.com\n2,B,b@b.com", 2),
+        ("", 0),
+    ])
+    def test_row_count(self, tmp_path: Path, data: str, expected: int) -> None:
+        """Check row counts across different CSV body inputs."""
+        p = tmp_path / "t.csv"
+        p.write_text(f"user_id,name,email\n{data}")
+        assert len(list(CsvParser().parse(p))) == expected
 
