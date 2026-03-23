@@ -15,6 +15,7 @@ from .parser import CsvParser
 from .validator import CsvValidator
 from .repository import JsonRepository
 from .importer import CsvImporter, ImportResult
+from .main import main
 
 
 class TestExceptions:
@@ -255,4 +256,30 @@ class TestCsvImporter:
         csv = tmp / "u.csv"
         csv.write_text("user_id,name,email\n1,J,j@ex.com")
         assert "Imported: 1" in str(importer.run(csv))
+
+
+class TestCli:
+    def test_success_exits_zero(self, tmp_path: Path) -> None:
+        csv = tmp_path / "u.csv"
+        csv.write_text("user_id,name,email\n1,Joshua,j@ex.com")
+        db = tmp_path / "db.json"
+        db.write_text("{}")
+        assert main([str(csv), "--db", str(db)]) == 0
+ 
+    def test_missing_file_exits_one(self, tmp_path: Path) -> None:
+        db = tmp_path / "db.json"
+        db.write_text("{}")
+        assert main([str(tmp_path / "nope.csv"), "--db", str(db)]) == 1
+ 
+    def test_calls_importer(self, tmp_path: Path, mocker) -> None:
+        csv = tmp_path / "u.csv"
+        csv.write_text("user_id,name,email\n1,J,j@ex.com")
+        mock_imp = mocker.MagicMock()
+        mock_imp.run.return_value = ImportResult(imported=1)
+        mocker.patch(
+            "amalitech_training.clean_code_testing_and_git.LAB_1.csv_cli.CsvImporter",
+            return_value=mock_imp,
+        )
+        main([str(csv)])
+        mock_imp.run.assert_called_once()
 
