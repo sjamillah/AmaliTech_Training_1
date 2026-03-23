@@ -1,5 +1,7 @@
 import pytest
 import json
+import runpy
+import sys
 
 from .exceptions import (
         DuplicateUserError,
@@ -94,6 +96,13 @@ class TestCsvParser:
         p = tmp_path / "e.csv"
         p.write_text("user_id,name,email\n")
         assert list(CsvParser().parse(p)) == []
+
+    def test_os_error_raises_file_format_error(self, tmp_path: Path, mocker) -> None:
+        """Ensure low-level OS read errors are mapped to FileFormatError."""
+        p = tmp_path / "users.csv"
+        mocker.patch("builtins.open", side_effect=OSError("disk failure"))
+        with pytest.raises(FileFormatError):
+            list(CsvParser().parse(p))
  
     @pytest.mark.parametrize("data,expected", [
         ("1,A,a@b.com", 1),
@@ -243,6 +252,22 @@ class TestCsvImporter:
         csv.write_text("user_id,name,email\n1,J,notanemail")
         r = importer.run(csv)
         assert r.errors == 1 and r.imported == 0
+
+    def test_missing_field_counted_as_skipped(self, imp) -> None:
+        """Ensure rows missing required columns are counted as skipped."""
+        importer, tmp = imp
+        csv = tmp / "u.csv"
+        csv.write_text("user_id,name\n1,J")
+        r = importer.run(csv)
+        assert r.skipped == 1 and r.imported == 0 and r.errors == 0
+
+    def test_bad_user_id_counted_as_skipped(self, imp) -> None:
+        """Ensure rows with invalid user_id values are counted as skipped."""
+        importer, tmp = imp
+        csv = tmp / "u.csv"
+        csv.write_text("user_id,name,email\nabc,J,j@ex.com")
+        r = importer.run(csv)
+        assert r.skipped == 1 and r.imported == 0 and r.errors == 0
  
     def test_missing_file_raises(self, imp) -> None:
         """Verify running import on a missing file raises FileFormatError."""
@@ -284,4 +309,20 @@ class TestCli:
         mocker.patch.object(cli_main, "CsvImporter", return_value=mock_imp)
         cli_main.main([str(csv)])
         mock_imp.run.assert_called_once()
+
+    def test_module_entrypoint_calls_sys_exit(self, tmp_path: Path, mocker, monkeypatch) -> None:
+        """Ensure running the module as __main__ routes through sys.exit."""
+        csv = tmp_path / "u.csv"
+        db = tmp_path / "db.json"
+        csv.write_text("user_id,name,email\n1,J,j@ex.com")
+        db.write_text("{}")
+        monkeypatch.setattr(sys, "argv", ["main.py", str(csv), "--db", str(db)])
+        exit_mock = mocker.patch("sys.exit")
+
+        runpy.run_module(
+            "amalitech_training.clean_code_testing_and_git.LAB_1.main",
+            run_name="__main__",
+        )
+
+        exit_mock.assert_called_once_with(0)
 
