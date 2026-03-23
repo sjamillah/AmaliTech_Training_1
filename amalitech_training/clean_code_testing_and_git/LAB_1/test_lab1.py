@@ -14,6 +14,7 @@ from pathlib import Path
 from .parser import CsvParser
 from .validator import CsvValidator
 from .repository import JsonRepository
+from .importer import CsvImporter, ImportResult
 
 
 class TestExceptions:
@@ -201,4 +202,57 @@ class TestJsonRepository:
     def test_missing_db_starts_empty(self, tmp_path: Path) -> None:
         """Verify a missing database file is handled as an empty repository."""
         assert JsonRepository(tmp_path / "new.json").load_all() == []
+
+
+@pytest.fixture
+def imp(tmp_path: Path):
+    """Build a CsvImporter instance with a temporary JSON repository."""
+    db = tmp_path / "db.json"
+    db.write_text("{}")
+    return CsvImporter(
+        parser=CsvParser(),
+        validator=CsvValidator(),
+        repository=JsonRepository(db),
+    ), tmp_path
+ 
+ 
+class TestCsvImporter:
+    """Tests for end-to-end CSV import result accounting."""
+
+    def test_happy_path(self, imp) -> None:
+        """Verify valid rows are imported with zero skips and errors."""
+        importer, tmp = imp
+        csv = tmp / "u.csv"
+        csv.write_text("user_id,name,email\n1,Joshua,j@ex.com\n2,Lynn,l@ex.com")
+        r = importer.run(csv)
+        assert r.imported == 2 and r.skipped == 0 and r.errors == 0
+ 
+    def test_duplicate_counted_as_skipped(self, imp) -> None:
+        """Ensure duplicate user ids are counted as skipped rows."""
+        importer, tmp = imp
+        csv = tmp / "u.csv"
+        csv.write_text("user_id,name,email\n1,J,j@ex.com\n1,J,j@ex.com")
+        r = importer.run(csv)
+        assert r.imported == 1 and r.skipped == 1
+ 
+    def test_bad_email_counted_as_error(self, imp) -> None:
+        """Ensure invalid email rows increment the error counter."""
+        importer, tmp = imp
+        csv = tmp / "u.csv"
+        csv.write_text("user_id,name,email\n1,J,notanemail")
+        r = importer.run(csv)
+        assert r.errors == 1 and r.imported == 0
+ 
+    def test_missing_file_raises(self, imp) -> None:
+        """Verify running import on a missing file raises FileFormatError."""
+        importer, tmp = imp
+        with pytest.raises(FileFormatError):
+            importer.run(tmp / "missing.csv")
+ 
+    def test_result_str_contains_counts(self, imp) -> None:
+        """Confirm ImportResult string output includes imported counts."""
+        importer, tmp = imp
+        csv = tmp / "u.csv"
+        csv.write_text("user_id,name,email\n1,J,j@ex.com")
+        assert "Imported: 1" in str(importer.run(csv))
 
