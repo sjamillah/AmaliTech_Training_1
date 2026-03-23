@@ -1,4 +1,5 @@
 import pytest
+import json
 
 from .exceptions import (
         DuplicateUserError,
@@ -12,6 +13,7 @@ from .models import User
 from pathlib import Path
 from .parser import CsvParser
 from .validator import CsvValidator
+from .repository import JsonRepository
 
 
 class TestExceptions:
@@ -144,4 +146,49 @@ class TestCsvValidator:
         """Confirm invalid email errors are also caught by ValidationError."""
         with pytest.raises(ValidationError):
             self.v.validate({"user_id":"1","name":"J","email":"bad"})
+
+
+@pytest.fixture
+def db(tmp_path: Path) -> Path:
+    p = tmp_path / "db.json"
+    p.write_text("{}")
+    return p
+ 
+ 
+class TestJsonRepository:
+    def test_save_writes_user_to_file(self, db: Path) -> None:
+        repo = JsonRepository(db)
+        repo.save(User(1, "Joshua", "j@ex.com"))
+        data = json.loads(db.read_text())
+        assert "1" in data
+        assert data["1"]["name"] == "Joshua"
+ 
+    def test_duplicate_raises(self, db: Path) -> None:
+        repo = JsonRepository(db)
+        u = User(1, "Joshua", "j@ex.com")
+        repo.save(u)
+        with pytest.raises(DuplicateUserError):
+            repo.save(u)
+ 
+    def test_exists_true_after_save(self, db: Path) -> None:
+        repo = JsonRepository(db)
+        repo.save(User(1, "J", "j@ex.com"))
+        assert repo.exists(1) is True
+ 
+    def test_exists_false_when_not_saved(self, db: Path) -> None:
+        assert JsonRepository(db).exists(99) is False
+ 
+    def test_load_all_returns_all_users(self, db: Path) -> None:
+        repo = JsonRepository(db)
+        repo.save(User(1, "A", "a@ex.com"))
+        repo.save(User(2, "B", "b@ex.com"))
+        assert len(repo.load_all()) == 2
+ 
+    def test_corrupt_db_starts_empty(self, tmp_path: Path) -> None:
+        p = tmp_path / "db.json"
+        p.write_text("not valid json")
+        assert JsonRepository(p).load_all() == []
+ 
+    def test_missing_db_starts_empty(self, tmp_path: Path) -> None:
+        assert JsonRepository(tmp_path / "new.json").load_all() == []
 
