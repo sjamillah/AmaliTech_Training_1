@@ -1,12 +1,13 @@
 import pytest
-from amalitech_training.clean_code_testing_and_git.LAB_1.exceptions import (
-    DuplicateUserError,
-    FileFormatError,
-    ImporterError,
-    InvalidEmailError,
-    MissingFieldError,
-    ValidationError,
-)
+
+from .exceptions import (
+        DuplicateUserError,
+        FileFormatError,
+        ImporterError,
+        InvalidEmailError,
+        MissingFieldError,
+        ValidationError,
+    )
 
 
 class TestExceptions:
