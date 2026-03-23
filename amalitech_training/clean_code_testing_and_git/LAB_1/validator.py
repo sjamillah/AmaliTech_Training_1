@@ -1,3 +1,5 @@
+"""Validation utilities for converting raw CSV rows into User objects."""
+
 import re
 import logging
  
@@ -8,7 +10,9 @@ from .models import User
  
 logger = logging.getLogger(__name__)
  
+# Required input columns for each imported CSV row.
 REQUIRED = ("user_id", "name", "email")
+# Simple email pattern used for basic format validation.
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
  
  
@@ -35,6 +39,7 @@ class CsvValidator:
         return User(user_id=uid, name=name, email=email)
  
     def _parse_id(self, value: str) -> int:
+        """Parse and validate user_id as a positive integer."""
         try:
             n = int(value)
         except ValueError:
@@ -44,6 +49,7 @@ class CsvValidator:
         return n
  
     def _parse_email(self, value: str) -> str:
+        """Normalize and validate email text using the configured regex."""
         if not EMAIL_RE.match(value.strip()):
             raise InvalidEmailError(f"Invalid email: {value!r}")
         return value.strip().lower()
