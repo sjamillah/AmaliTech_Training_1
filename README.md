@@ -48,6 +48,18 @@ poetry run python -m amalitech_training.python_basics.LAB_4.main
 poetry run python -m amalitech_training.python_basics.LAB_5.main
 ```
 
+## Running Clean Code Labs (Import-Safe)
+
+To avoid import errors, run clean-code files in module mode from the project root.
+
+```powershell
+python -m amalitech_training.clean_code_testing_and_git.LAB_1.main amalitech_training/clean_code_testing_and_git/LAB_1/users.csv
+python -m pytest amalitech_training/clean_code_testing_and_git/LAB_1/test_lab1.py -q
+python -m pytest amalitech_training/clean_code_testing_and_git/LAB_3/test_lab3.py -q
+```
+
+If you run files directly like `python main.py` inside a lab folder, relative imports may fail.
+
 ## Running Tests
 
 Run everything:
