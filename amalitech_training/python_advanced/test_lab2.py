@@ -1,4 +1,4 @@
-from regex_patterns import (
+from .regex_patterns import (
     LOG_PATTERN,
     TIMESTAMP_PATTERN,
     is_valid_ip,
@@ -44,12 +44,12 @@ class TestTimePattern:
         timestamp = "10/Oct/2000:13:55:36 -0700"
         el = TIMESTAMP_PATTERN.match(timestamp)
         assert el is not None
-        assert el.group("day") == "01"
+        assert el.group("day") == "10"
         assert el.group("month") == "Oct"
-        assert el.group("year") == "2002"
-        assert el.group("hour") == "08"
-        assert el.group("minute") == "00"
-        assert el.group("second") == "01"
+        assert el.group("year") == "2000"
+        assert el.group("hour") == "13"
+        assert el.group("minute") == "55"
+        assert el.group("second") == "36"
         assert el.group("tz") == "-0700"
 
     def test_returns_none_for_garbage(self):
@@ -77,7 +77,7 @@ class TestValidationHelpers:
 
     def test_valid_timestamp(self):
         assert is_valid_timestamp("10/Oct/2000:13:55:36 -0700") is True
-        assert is_valid_timestamp("01/01/1988:13:00:45 -0700") is True
+        assert is_valid_timestamp("01/Oct/1988:13:00:45 -0700") is True
 
     def test_invalid_timestamp(self):
         assert is_valid_timestamp("10/Oct/2000:13:55:36") is False
