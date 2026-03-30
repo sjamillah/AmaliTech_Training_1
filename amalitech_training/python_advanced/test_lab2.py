@@ -7,7 +7,7 @@ from .regex_patterns import (
     clean_url,
     clean_whitespace,
 )
-from decorators import timer, log_call, cache
+from .decorators import timer, log_call, cache
 
 SAMPLE_LOGS = [
     '192.168.1.1 - - [10/Oct/2023:08:00:01 -0700] "GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"',
