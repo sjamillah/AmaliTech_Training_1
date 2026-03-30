@@ -18,7 +18,7 @@ def timer(func):
         start = time.perf_counter()
         result = func(*args, **kwargs)
         elapsed = time.perf_counter() - start
-        logger.info("timer | %s finidhed in %.4fs", func.__name__, elapsed)
+        logger.info("timer | %s finished in %.4fs", func.__name__, elapsed)
         return result
 
     return wrapper
