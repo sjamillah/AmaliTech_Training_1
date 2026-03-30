@@ -7,6 +7,7 @@ from .regex_patterns import (
     clean_url,
     clean_whitespace,
 )
+from .decorators import timer, log_call, cache
 
 SAMPLE_LOGS = [
     '192.168.1.1 - - [10/Oct/2023:08:00:01 -0700] "GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"',
@@ -90,3 +91,74 @@ class TestValidationHelpers:
 
     def test_clean_whitespace(self):
         assert clean_whitespace("too   many   spaces") == "too many spaces"
+
+
+class TestTimerDecorator:
+    def test_function_still_returns_value(self):
+        @timer
+        def add(a, b):
+            return a + b
+
+        assert add(2, 3) == 5
+
+    def test_preserves_function_name(self):
+        @timer
+        def my_func():
+            pass
+
+        assert my_func.__name__ == "my_func"
+
+
+class TestLogCallDecorator:
+    def test_function_still_returns_value(self):
+        @log_call
+        def multiply(a, b):
+            return a * b
+
+        assert multiply(3, 4) == 12
+
+    def test_preserves_function_name(self):
+        @log_call
+        def my_func():
+            pass
+
+        assert my_func.__name__ == "my_func"
+
+
+class TestCacheDecorator:
+    def test_returns_correct_value(self):
+        @cache()
+        def square(n):
+            return n * n
+
+        assert square(5) == 25
+
+    def test_caches_result(self):
+        call_count = {"n": 0}
+
+        @cache(maxsize=128)
+        def slow(x):
+            call_count["n"] += 1
+            return x * 2
+
+        slow(10)
+        slow(10)
+        assert call_count["n"] == 1
+
+    def test_cache_info_exposed(self):
+        @cache()
+        def identity(x):
+            return x
+
+        identity(1)
+        info = identity.cache_info()
+        assert info.currsize >= 1
+
+    def test_stacked_decorators(self):
+        @timer
+        @log_call
+        @cache()
+        def triple(n):
+            return n * 3
+
+        assert triple(7) == 21

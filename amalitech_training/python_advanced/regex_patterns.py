@@ -91,16 +91,16 @@ def is_valid_timestamp(timestamp: str):
     """Return True if timestamp is well-formatted"""
     match = TIMESTAMP_VALIDATION.match(timestamp)
     if not match:
-        return None
+        return False
 
     # Extract numeric components
     try:
-        dt = datetime.strptime(
+        datetime.strptime(
             f"{match.group('day')}/{match.group('month')}/{match.group('year')} "
             f"{match.group('hour')}:{match.group('minute')}:{match.group('second')}",
             "%d/%b/%Y %H:%M:%S",
         )
-        return dt
+        return True
     except ValueError:
         return False
 
