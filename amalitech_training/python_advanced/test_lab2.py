@@ -1,3 +1,5 @@
+import pytest
+from datetime import datetime
 from .regex_patterns import (
     LOG_PATTERN,
     TIMESTAMP_PATTERN,
@@ -8,6 +10,20 @@ from .regex_patterns import (
     clean_whitespace,
 )
 from .decorators import timer, log_call, cache
+from .log_parser import (
+    build_pipeline,
+    count_by_ip,
+    count_by_status,
+    count_by_url,
+    filter_by_ip,
+    filter_by_method,
+    filter_by_status,
+    filter_by_status_range,
+    filter_by_time_range,
+    parse_line,
+    parse_timestamp,
+    total_bytes,
+)
 
 SAMPLE_LOGS = [
     '192.168.1.1 - - [10/Oct/2023:08:00:01 -0700] "GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"',
@@ -18,6 +34,12 @@ SAMPLE_LOGS = [
     '192.168.1.1 - - [10/Oct/2023:09:15:00 -0700] "GET /style.css HTTP/1.1" 200 2048 "-" "Mozilla/5.0"',
     '192.168.1.1 - - [10/Oct/2023:10:00:00 -0700] "GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"',
 ]
+
+
+@pytest.fixture
+def sample_entries():
+    """Parse SAMPLE_LOGS into a list of LogEntry dicts"""
+    return [e for e in map(parse_line, SAMPLE_LOGS) if e is not None]
 
 
 class TestLogPattern:
@@ -162,3 +184,115 @@ class TestCacheDecorator:
             return n * 3
 
         assert triple(7) == 21
+
+
+class TestParseLine:
+    def test_returns_dict_for_valid_line(self):
+        entry = parse_line(SAMPLE_LOGS[0])
+        assert isinstance(entry, dict)
+
+    def test_ip_field(self):
+        entry = parse_line(SAMPLE_LOGS[0])
+        assert entry["ip"] == "192.168.1.1"
+
+    def test_status_is_int(self):
+        entry = parse_line(SAMPLE_LOGS[0])
+        assert entry["status"] == 200
+
+    def test_size_is_int(self):
+        entry = parse_line(SAMPLE_LOGS[0])
+        assert entry["size"] == 1024
+
+    def test_returns_none_for_bad_line(self):
+        assert parse_line("garbage") is None
+
+    def test_returns_none_for_empty_line(self):
+        assert parse_line("") is None
+
+    def test_method_field(self):
+        entry = parse_line(SAMPLE_LOGS[1])
+        assert entry["method"] == "POST"
+
+    def test_url_has_no_query_string(self):
+        line = '1.2.3.4 - - [10/Oct/2023:08:00:01 -0700] "GET /search?q=hello HTTP/1.1" 200 512 "-" "-"'
+        entry = parse_line(line)
+        assert "?" not in entry["url"]
+
+
+class TestParseTimestamp:
+    def test_returns_datetime(self):
+        dt = parse_timestamp("10/Oct/2023:08:00:01 -0700")
+        assert isinstance(dt, datetime)
+        assert dt.year == 2023
+        assert dt.month == 10
+        assert dt.hour == 8
+
+    def test_returns_none_for_invalid(self):
+        assert parse_timestamp("not a timestamp") is None
+
+
+class TestFilterFunctions:
+    def test_filter_by_status_200(self, sample_entries):
+        results = list(filter_by_status(sample_entries, 200))
+        assert all(e["status"] == 200 for e in results)
+        assert len(results) == 4
+
+    def test_filter_by_status_range_4xx(self, sample_entries):
+        results = list(filter_by_status_range(sample_entries, 400, 499))
+        assert all(400 <= e["status"] <= 499 for e in results)
+
+    def test_filter_by_ip(self, sample_entries):
+        results = list(filter_by_ip(sample_entries, "10.0.0.5"))
+        assert all(e["ip"] == "10.0.0.5" for e in results)
+        assert len(results) == 2
+
+    def test_filter_by_method_get(self, sample_entries):
+        results = list(filter_by_method(sample_entries, "GET"))
+        assert all(e["method"] == "GET" for e in results)
+
+    def test_filter_by_time_range(self, sample_entries):
+        start = datetime(2023, 10, 10, 8, 0, 0)
+        end = datetime(2023, 10, 10, 8, 59, 59)
+        results = list(filter_by_time_range(sample_entries, start, end))
+        assert all(start <= e["timestamp"] <= end for e in results)
+
+
+class TestAggregations:
+    def test_total_bytes(self, sample_entries):
+        total = total_bytes(sample_entries)
+        assert total == sum(e["size"] for e in sample_entries)
+
+    def test_count_by_status_keys(self, sample_entries):
+        counts = count_by_status(sample_entries)
+        assert 200 in counts
+        assert 404 in counts
+
+    def test_count_by_ip(self, sample_entries):
+        counts = count_by_ip(sample_entries)
+        assert counts["192.168.1.1"] == 3
+
+    def test_count_by_url(self, sample_entries):
+        counts = count_by_url(sample_entries)
+        assert "/index.html" in counts
+
+
+class TestBuildPipeline:
+    def test_returns_list(self, sample_entries):
+        result = build_pipeline(SAMPLE_LOGS)
+        assert isinstance(result, list)
+
+    def test_with_status_filter(self):
+        result = build_pipeline(
+            SAMPLE_LOGS, filters=[lambda e: filter_by_status(e, 200)]
+        )
+        assert all(e["status"] == 200 for e in result)
+
+    def test_chained_filters(self):
+        result = build_pipeline(
+            SAMPLE_LOGS,
+            filters=[
+                lambda e: filter_by_method(e, "GET"),
+                lambda e: filter_by_status(e, 200),
+            ],
+        )
+        assert all(e["method"] == "GET" and e["status"] == 200 for e in result)
