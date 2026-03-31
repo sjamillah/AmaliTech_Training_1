@@ -1,5 +1,6 @@
 import pytest
 from datetime import datetime
+from __future__ import annotations
 from .regex_patterns import (
     LOG_PATTERN,
     TIMESTAMP_PATTERN,
