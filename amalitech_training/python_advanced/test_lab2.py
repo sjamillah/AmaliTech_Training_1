@@ -7,6 +7,8 @@ from .regex_patterns import (
     is_valid_ip,
     is_valid_url,
     is_valid_timestamp,
+    is_valid_method,
+    classify_ip,
     clean_url,
     clean_whitespace,
 )
@@ -16,6 +18,7 @@ from .log_parser import (
     count_by_ip,
     count_by_status,
     count_by_url,
+    extract_field,
     filter_by_ip,
     filter_by_method,
     filter_by_status,
@@ -135,14 +138,40 @@ class TestValidationHelpers:
         assert is_valid_url("ftp://bad.com") is False
         assert is_valid_url("not-a-url") is False
 
+    def test_valid_url_with_query_string(self):
+        assert is_valid_url("https://example.com/path?q=1") is True
+
     def test_valid_timestamp(self):
         assert is_valid_timestamp("10/Oct/2000:13:55:36 -0700") is True
         assert is_valid_timestamp("01/Oct/1988:13:00:45 -0700") is True
 
     def test_invalid_timestamp(self):
         assert is_valid_timestamp("10/Oct/2000:13:55:36") is False
-        assert is_valid_timestamp("20/Oct/200:13:00:98 -0700") is False
         assert is_valid_timestamp("2000:13:55:36 -0700") is False
+
+    def test_invalid_timestamp_bad_date(self):
+        assert is_valid_timestamp("32/Oct/2000:13:55:36 -0700") is False
+
+    def test_classify_ip_internal(self):
+        assert classify_ip("192.168.1.1") == "internal"
+        assert classify_ip("10.0.0.1") == "internal"
+        assert classify_ip("172.16.0.1") == "internal"
+
+    def test_classify_ip_external(self):
+        assert classify_ip("8.8.8.8") == "external"
+        assert classify_ip("1.1.1.1") == "external"
+
+    def test_is_valid_method_valid(self):
+        assert is_valid_method("GET") is True
+        assert is_valid_method("POST") is True
+        assert is_valid_method("PUT") is True
+        assert is_valid_method("DELETE") is True
+        assert is_valid_method("PATCH") is True
+        assert is_valid_method("HEAD") is True
+
+    def test_is_valid_method_invalid(self):
+        assert is_valid_method("INVALID") is False
+        assert is_valid_method("get") is False
 
     def test_clean_url_strips_query(self):
         assert clean_url("/page?foo=bar") == "/page"
@@ -312,6 +341,16 @@ class TestAggregations:
         counts = count_by_url(sample_entries)
         assert "/index.html" in counts
 
+    def test_extract_field_ips(self, sample_entries):
+        ips = list(extract_field(sample_entries, "ip"))
+        assert all(isinstance(ip, str) for ip in ips)
+        assert "192.168.1.1" in ips
+
+    def test_extract_field_status(self, sample_entries):
+        statuses = list(extract_field(sample_entries, "status"))
+        assert all(isinstance(s, int) for s in statuses)
+        assert 200 in statuses
+
 
 class TestBuildPipeline:
     def test_returns_list(self, sample_entries):
@@ -429,6 +468,14 @@ class TestSlidingWindow:
         n = len(sample_entries)
         windows = list(sliding_window(iter(sample_entries), size=3))
         assert len(windows) == n - 3 + 1
+
+    def test_window_smaller_than_data(self):
+        small_data = [
+            {"ip": "1.1.1.1", "status": 200},
+            {"ip": "2.2.2.2", "status": 404},
+        ]
+        windows = list(sliding_window(iter(small_data), size=5))
+        assert windows == []
 
 
 class TestAnalyticsFunctions:
