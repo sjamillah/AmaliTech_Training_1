@@ -37,6 +37,22 @@ from .generators import (
     sliding_window,
     take_until_time,
 )
+from .analytics import (
+    bandwidth_used,
+    cached_top_urls,
+    error_rate,
+    filter_client_errors,
+    filter_errors,
+    filter_get,
+    filter_post,
+    filter_server_errors,
+    filter_success,
+    format_report,
+    generate_report,
+    status_breakdown,
+    top_n_ips,
+    top_n_urls,
+)
 
 SAMPLE_LOGS = [
     '192.168.1.1 - - [10/Oct/2023:08:00:01 -0700] "GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"',
@@ -413,3 +429,99 @@ class TestSlidingWindow:
         n = len(sample_entries)
         windows = list(sliding_window(iter(sample_entries), size=3))
         assert len(windows) == n - 3 + 1
+
+
+class TestAnalyticsFunctions:
+    def test_top_n_ips_returns_n(self, sample_entries):
+        result = top_n_ips(sample_entries, n=2)
+        assert len(result) == 2
+
+    def test_top_n_ips_sorted_desc(self, sample_entries):
+        result = top_n_ips(sample_entries, n=3)
+        counts = [c for _, c in result]
+        assert counts == sorted(counts, reverse=True)
+
+    def test_top_n_urls_returns_n(self, sample_entries):
+        result = top_n_urls(sample_entries, n=2)
+        assert len(result) == 2
+
+    def test_status_breakdown_keys(self, sample_entries):
+        result = status_breakdown(sample_entries)
+        assert 200 in result
+
+    def test_error_rate_between_0_and_1(self, sample_entries):
+        rate = error_rate(sample_entries)
+        assert 0.0 <= rate <= 1.0
+
+    def test_error_rate_empty(self):
+        assert error_rate([]) == 0.0
+
+    def test_bandwidth_used(self, sample_entries):
+        bw = bandwidth_used(sample_entries)
+        assert bw > 0
+
+    def test_cached_top_urls(self, sample_entries):
+        result = cached_top_urls(sample_entries, n=3)
+        assert len(result) <= 3
+
+
+class TestPartialFilters:
+    def test_filter_success(self, sample_entries):
+        result = list(filter_success(sample_entries))
+        assert all(200 <= e["status"] <= 299 for e in result)
+
+    def test_filter_errors(self, sample_entries):
+        result = list(filter_errors(sample_entries))
+        assert all(e["status"] >= 400 for e in result)
+
+    def test_filter_client_errors(self, sample_entries):
+        result = list(filter_client_errors(sample_entries))
+        assert all(400 <= e["status"] <= 499 for e in result)
+
+    def test_filter_server_errors(self, sample_entries):
+        result = list(filter_server_errors(sample_entries))
+        assert all(500 <= e["status"] <= 599 for e in result)
+
+    def test_filter_get(self, sample_entries):
+        result = list(filter_get(sample_entries))
+        assert all(e["method"] == "GET" for e in result)
+
+    def test_filter_post(self, sample_entries):
+        result = list(filter_post(sample_entries))
+        assert all(e["method"] == "POST" for e in result)
+
+
+class TestGenerateReport:
+    def test_report_has_required_keys(self, sample_entries):
+        report = generate_report(sample_entries)
+        required = {
+            "total_requests",
+            "total_bytes",
+            "error_rate",
+            "status_breakdown",
+            "top_ips",
+            "top_urls",
+            "error_count",
+            "server_error_count",
+        }
+        assert required <= report.keys()
+
+    def test_total_requests_matches(self, sample_entries):
+        report = generate_report(sample_entries)
+        assert report["total_requests"] == len(sample_entries)
+
+    def test_error_count_positive(self, sample_entries):
+        report = generate_report(sample_entries)
+        assert report["error_count"] >= 0
+
+
+class TestFormatReport:
+    def test_returns_string(self, sample_entries):
+        report = generate_report(sample_entries)
+        output = format_report(report)
+        assert isinstance(output, str)
+
+    def test_contains_total_requests(self, sample_entries):
+        report = generate_report(sample_entries)
+        output = format_report(report)
+        assert "Total requests" in output
