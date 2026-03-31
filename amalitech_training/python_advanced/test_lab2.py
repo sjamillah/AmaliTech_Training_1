@@ -1,6 +1,6 @@
+from __future__ import annotations
 import pytest
 from datetime import datetime
-from __future__ import annotations
 from .regex_patterns import (
     LOG_PATTERN,
     TIMESTAMP_PATTERN,
@@ -59,7 +59,7 @@ def sample_entries():
 def sample_log_file(tmp_path):
     """Write SAMPLE_LOGS to a temporary file and return its path"""
     log_file = tmp_path / "access.log"
-    log_file.write_text("/n".join(SAMPLE_LOGS) + "\n", encoding="utf-8")
+    log_file.write_text("\n".join(SAMPLE_LOGS) + "\n", encoding="utf-8")
     return log_file
 
 
