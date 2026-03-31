@@ -1,3 +1,10 @@
+"""Analytics module for log file statistics and reporting.
+
+Provides functions to analyze parsed log entries and generate
+summary reports including request counts, error rates, top IPs/URLs,
+and bandwidth usage. Results can be cached for performance.
+"""
+
 from __future__ import annotations
 
 import functools
