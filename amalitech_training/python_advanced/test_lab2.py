@@ -1,3 +1,4 @@
+from __future__ import annotations
 import pytest
 from datetime import datetime
 from .regex_patterns import (
@@ -24,6 +25,18 @@ from .log_parser import (
     parse_timestamp,
     total_bytes,
 )
+from .generators import (
+    BatchIterator,
+    group_by_hour,
+    group_by_ip,
+    group_by_status,
+    paginate,
+    parse_file,
+    read_log_file,
+    read_multiple_files,
+    sliding_window,
+    take_until_time,
+)
 
 SAMPLE_LOGS = [
     '192.168.1.1 - - [10/Oct/2023:08:00:01 -0700] "GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"',
@@ -40,6 +53,14 @@ SAMPLE_LOGS = [
 def sample_entries():
     """Parse SAMPLE_LOGS into a list of LogEntry dicts"""
     return [e for e in map(parse_line, SAMPLE_LOGS) if e is not None]
+
+
+@pytest.fixture
+def sample_log_file(tmp_path):
+    """Write SAMPLE_LOGS to a temporary file and return its path"""
+    log_file = tmp_path / "access.log"
+    log_file.write_text("\n".join(SAMPLE_LOGS) + "\n", encoding="utf-8")
+    return log_file
 
 
 class TestLogPattern:
@@ -296,3 +317,99 @@ class TestBuildPipeline:
             ],
         )
         assert all(e["method"] == "GET" and e["status"] == 200 for e in result)
+
+
+class TestReadLogFile:
+    def test_yields_strings(self, sample_log_file):
+        lines = list(read_log_file(sample_log_file))
+        assert all(isinstance(line, str) for line in lines)
+
+    def test_correct_line_count(self, sample_log_file):
+        lines = list(read_log_file(sample_log_file))
+        assert len(lines) == len(SAMPLE_LOGS)
+
+
+class TestReadMultipleFiles:
+    def test_chains_two_files(self, tmp_path):
+        f1 = tmp_path / "a.log"
+        f2 = tmp_path / "b.log"
+        f1.write_text(SAMPLE_LOGS[0] + "\n")
+        f2.write_text(SAMPLE_LOGS[1] + "\n")
+        lines = list(read_multiple_files(f1, f2))
+        assert len(lines) == 2
+
+
+class TestParseFile:
+    def test_yields_dicts(self, sample_log_file):
+        entries = list(parse_file(sample_log_file))
+        assert all(isinstance(e, dict) for e in entries)
+
+    def test_skips_blank_lines(self, tmp_path):
+        f = tmp_path / "with_blanks.log"
+        f.write_text(SAMPLE_LOGS[0] + "\n\n" + SAMPLE_LOGS[1] + "\n")
+        entries = list(parse_file(f))
+        assert len(entries) == 2
+
+
+class TestBatchIterator:
+    def test_batch_size(self, sample_entries):
+        batches = list(BatchIterator(iter(sample_entries), size=2))
+        for batch in batches[:-1]:
+            assert len(batch) == 2
+
+    def test_last_batch_can_be_smaller(self, sample_entries):
+        batches = list(BatchIterator(iter(sample_entries), size=4))
+        assert sum(len(b) for b in batches) == len(sample_entries)
+
+    def test_empty_source(self):
+        batches = list(BatchIterator(iter([]), size=5))
+        assert batches == []
+
+
+class TestGroupBy:
+    def test_group_by_status(self, sample_entries):
+        groups = group_by_status(sample_entries)
+        assert 200 in groups
+        assert all(e["status"] == 200 for e in groups[200])
+
+    def test_group_by_hour(self, sample_entries):
+        groups = group_by_hour(sample_entries)
+        for hour, entries in groups.items():
+            assert all(e["timestamp"].hour == hour for e in entries)
+
+    def test_group_by_ip(self, sample_entries):
+        groups = group_by_ip(sample_entries)
+        for ip, entries in groups.items():
+            assert all(e["ip"] == ip for e in entries)
+
+
+class TestPaginate:
+    def test_first_page(self, sample_entries):
+        page = paginate(iter(sample_entries), page=0, page_size=3)
+        assert len(page) == 3
+
+    def test_second_page(self, sample_entries):
+        page = paginate(iter(sample_entries), page=1, page_size=3)
+        assert len(page) == 3
+
+    def test_page_beyond_end(self, sample_entries):
+        page = paginate(iter(sample_entries), page=99, page_size=3)
+        assert page == []
+
+
+class TestTakeUntilTime:
+    def test_stops_at_cutoff(self, sample_entries):
+        cutoff = datetime(2023, 10, 10, 9, 0, 0)
+        result = list(take_until_time(iter(sample_entries), cutoff))
+        assert all(e["timestamp"] < cutoff for e in result)
+
+
+class TestSlidingWindow:
+    def test_window_size(self, sample_entries):
+        windows = list(sliding_window(iter(sample_entries), size=3))
+        assert all(len(w) == 3 for w in windows)
+
+    def test_window_count(self, sample_entries):
+        n = len(sample_entries)
+        windows = list(sliding_window(iter(sample_entries), size=3))
+        assert len(windows) == n - 3 + 1
