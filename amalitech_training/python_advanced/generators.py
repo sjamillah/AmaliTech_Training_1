@@ -1,3 +1,10 @@
+"""Generator and streaming utilities for processing log files.
+
+Provides memory-efficient iterators for reading, parsing, and batching
+log entries without loading entire files into memory. Includes grouping,
+pagination, and sliding window operations for advanced log analysis.
+"""
+
 from __future__ import annotations
 
 import itertools
@@ -42,13 +49,30 @@ class BatchIterator:
     """
 
     def __init__(self, source: Iterable, size: int = 100):
+        """
+        Initialize the batch iterator.
+
+        Args:
+            source: Any iterable of items to batch.
+            size: Maximum number of items per batch (default: 100).
+        """
         self._source = iter(source)
         self._size = size
 
     def __iter__(self):
+        """Return the iterator object (self) to support iteration protocol."""
         return self
 
     def __next__(self) -> list:
+        """
+        Return the next batch of items.
+
+        Returns:
+            A list of up to `size` items from the source iterable.
+
+        Raises:
+            StopIteration: When the source iterable is exhausted.
+        """
         batch = list(itertools.islice(self._source, self._size))
         if not batch:
             raise StopIteration

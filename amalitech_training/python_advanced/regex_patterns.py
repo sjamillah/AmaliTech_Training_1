@@ -109,4 +109,5 @@ ALLOWED_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"}
 
 
 def is_valid_method(method: str) -> bool:
+    """Return True if method is a valid HTTP method (GET, POST, PUT, DELETE, PATCH, HEAD)."""
     return method in ALLOWED_METHODS
