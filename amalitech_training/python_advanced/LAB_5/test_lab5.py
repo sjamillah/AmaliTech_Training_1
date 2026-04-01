@@ -356,7 +356,10 @@ class TestFetchUrl:
 class TestFetchAll:
     @pytest.mark.asyncio
     async def test_returns_list(self):
-        with patch("fetcher.fetch_url", new=AsyncMock(return_value=MOCK_FETCH)):
+        with patch(
+            "amalitech_training.python_advanced.LAB_5.fetcher.fetch_url",
+            new=AsyncMock(return_value=MOCK_FETCH),
+        ):
             results = await fetch_all(["https://a.com", "https://b.com"])
         assert isinstance(results, list)
         assert len(results) == 2
@@ -368,7 +371,10 @@ class TestFetchAll:
 
     @pytest.mark.asyncio
     async def test_each_result_has_required_keys(self):
-        with patch("fetcher.fetch_url", new=AsyncMock(return_value=MOCK_FETCH)):
+        with patch(
+            "amalitech_training.python_advanced.LAB_5.fetcher.fetch_url",
+            new=AsyncMock(return_value=MOCK_FETCH),
+        ):
             results = await fetch_all(["https://example.com"])
         assert {"url", "status", "html", "error"} <= results[0].keys()
 
@@ -376,13 +382,19 @@ class TestFetchAll:
 class TestFetchWithTimeout:
     @pytest.mark.asyncio
     async def test_returns_result_on_success(self):
-        with patch("fetcher.fetch_url", new=AsyncMock(return_value=MOCK_FETCH)):
+        with patch(
+            "amalitech_training.python_advanced.LAB_5.fetcher.fetch_url",
+            new=AsyncMock(return_value=MOCK_FETCH),
+        ):
             result = await fetch_with_timeout("https://example.com", timeout=5.0)
         assert result["url"] == "https://example.com"
 
     @pytest.mark.asyncio
     async def test_timeout_returns_error_dict(self):
-        with patch("fetcher.asyncio.wait_for", side_effect=asyncio.TimeoutError):
+        with patch(
+            "amalitech_training.python_advanced.LAB_5.fetcher.asyncio.wait_for",
+            side_effect=asyncio.TimeoutError,
+        ):
             result = await fetch_with_timeout("https://slow.example.com", timeout=0.01)
         assert result["error"] == "timeout"
         assert result["html"] is None
