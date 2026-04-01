@@ -1,5 +1,6 @@
 from __future__ import annotations
 import pytest
+import time
 from .extractor import (
     extract_all,
     extract_headings,
@@ -10,6 +11,7 @@ from .extractor import (
     process_results,
     word_count,
 )
+from .async_decorators import rate_limit, retry
 
 SAMPLE_HTML = """
 <html>
@@ -207,3 +209,81 @@ class TestMapToSummary:
         enriched = [extract_all(SAMPLE_RESULT)]
         summary = map_to_summary(enriched)[0]
         assert isinstance(summary["headings"], list)
+
+
+class TestRetryDecorator:
+    @pytest.mark.asyncio
+    async def test_returns_value_on_success(self):
+        @retry(max_attempts=3)
+        async def ok():
+            return "ok"
+
+        assert await ok() == "ok"
+
+    @pytest.mark.asyncio
+    async def test_retries_then_succeeds(self):
+        calls = {"n": 0}
+
+        @retry(max_attempts=3, delay=0.01)
+        async def flaky():
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise ValueError("not yet")
+            return "done"
+
+        assert await flaky() == "done"
+        assert calls["n"] == 3
+
+    @pytest.mark.asyncio
+    async def test_raises_after_max_attempts(self):
+        @retry(max_attempts=2, delay=0.01)
+        async def always_fails():
+            raise RuntimeError("boom")
+
+        with pytest.raises(RuntimeError, match="boom"):
+            await always_fails()
+
+    @pytest.mark.asyncio
+    async def test_preserves_function_name(self):
+        @retry()
+        async def my_func():
+            return 1
+
+        assert my_func.__name__ == "my_func"
+
+    @pytest.mark.asyncio
+    async def test_only_catches_specified_exceptions(self):
+        @retry(max_attempts=2, delay=0.01, exceptions=(ValueError,))
+        async def wrong_exc():
+            raise TypeError("not caught")
+
+        with pytest.raises(TypeError):
+            await wrong_exc()
+
+
+class TestRateLimitDecorator:
+    @pytest.mark.asyncio
+    async def test_returns_correct_value(self):
+        @rate_limit(calls_per_second=100.0)
+        async def fast():
+            return 42
+
+        assert await fast() == 42
+
+    @pytest.mark.asyncio
+    async def test_preserves_function_name(self):
+        @rate_limit(calls_per_second=10.0)
+        async def named():
+            return 1
+
+        assert named.__name__ == "named"
+
+    @pytest.mark.asyncio
+    async def test_throttles_rapid_calls(self):
+        @rate_limit(calls_per_second=1.0)
+        async def timed():
+            return time.monotonic()
+
+        t1 = await timed()
+        t2 = await timed()
+        assert (t2 - t1) >= 0.9
