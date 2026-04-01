@@ -17,8 +17,8 @@ SAMPLE_HTML = """
   <h1>Main Heading</h1>
   <h2>Sub Heading</h2>
   <h3>Minor Heading</h3>
-  <p>Visit <a href="https://example.com">Example</a> or
-     <a href="/relative/path">relative</a>.</p>
+  <p>Visit <a href="https://example.com">Example</a> and
+     <a href="/about">About</a>.</p>
   <p>Some visible text content for word counting purposes.</p>
 </body>
 </html>
@@ -54,6 +54,9 @@ class TestExtractTitle:
         html = "<TITLE>Upper</TITLE>"
         assert extract_title(html) == "Upper"
 
+    def test_empty_string(self):
+        assert extract_title("") is None
+
 
 class TestExtractLinks:
     def test_finds_absolute_links(self):
@@ -71,16 +74,27 @@ class TestExtractLinks:
         html = "<a href='/single'>text</a>"
         assert "/single" in extract_links(html)
 
+    def test_skips_fragment_only_hrefs(self):
+        links = extract_links("<a href='#section'>Jump</a>")
+        assert "#section" not in links
+
 
 class TestExtractHeadings:
-    def test_finds_h1_h2_and_h3(self):
-        headings = extract_headings(SAMPLE_HTML)
-        assert "Main Heading" in headings
-        assert "Sub Heading" in headings
-        assert "Minor Heading" in headings
+    def test_finds_h1(self):
+        assert "Main Heading" in extract_headings(SAMPLE_HTML)
+
+    def test_finds_h2(self):
+        assert "Sub Heading" in extract_headings(SAMPLE_HTML)
+
+    def test_finds_h3(self):
+        assert "Minor Heading" in extract_headings(SAMPLE_HTML)
 
     def test_returns_empty_for_no_headings(self):
         assert extract_headings("<p>no headings</p>") == []
+
+    def test_strips_inner_whitespace(self):
+        html = "<h1>  Spaced  </h1>"
+        assert "Spaced" in extract_headings(html)
 
 
 class TestWordCount:
@@ -94,6 +108,11 @@ class TestWordCount:
 
     def test_zero_for_empty_html(self):
         assert word_count("") == 0
+
+    def test_ignores_tag_attribute_text(self):
+        # attribute values should not be counted as words
+        html = '<a href="https://example.com">click</a>'
+        assert word_count(html) == 1
 
 
 class TestExtractAll:
@@ -113,6 +132,7 @@ class TestExtractAll:
         result = extract_all(FAILED_RESULT)
         assert result["title"] is None
         assert result["links"] == []
+        assert result["headings"] == []
         assert result["words"] == 0
 
     def test_no_email_field_present(self):
@@ -128,11 +148,17 @@ class TestProcessResults:
         assert inspect.isasyncgen(gen)
 
     @pytest.mark.asyncio
-    async def test_yields_enriched_results(self):
+    async def test_yields_correct_count(self):
         results = []
         async for item in process_results([SAMPLE_RESULT, FAILED_RESULT]):
             results.append(item)
         assert len(results) == 2
+
+    @pytest.mark.asyncio
+    async def test_each_item_has_title_key(self):
+        results = []
+        async for item in process_results([SAMPLE_RESULT]):
+            results.append(item)
         assert "title" in results[0]
 
     @pytest.mark.asyncio
@@ -162,6 +188,7 @@ class TestMapToSummary:
         summaries = map_to_summary(enriched)
         assert "url" in summaries[0]
         assert "title" in summaries[0]
+        assert "headings" in summaries[0]
         assert "words" in summaries[0]
         assert "links" in summaries[0]
 
