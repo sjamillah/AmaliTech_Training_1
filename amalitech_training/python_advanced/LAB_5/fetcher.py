@@ -1,4 +1,5 @@
 from __future__ import annotations
+"""Async HTTP fetching helpers with retry, rate limit, and timeout handling."""
 
 import asyncio
 import logging
@@ -74,6 +75,7 @@ class _DummySession:
 
 @asynccontextmanager
 async def _client_session_or_dummy() -> Any:
+    """Yield aiohttp session when available, otherwise yield a dummy session."""
     try:
         import aiohttp
 

@@ -1,4 +1,5 @@
 from __future__ import annotations
+"""HTML extraction and result post-processing helpers for LAB_5."""
 
 import re
 from typing import Any, AsyncIterator, Dict, Iterable, List, Optional
@@ -11,7 +12,7 @@ WHITESPACE = re.compile(r"\s+")
 WORD_PATTERN = re.compile(r"\b[a-zA-Z]\w*\b")
 
 
-# Extraction synchronously
+# Synchronous extraction helpers
 def extract_title(html: str) -> Optional[str]:
     """Return the page <title> text, or None if absent."""
     m = TITLE_PATTERN.search(html)
@@ -49,7 +50,7 @@ def extract_all(result: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# Async generator
+# Async generator pipeline stage
 async def process_results(
     results: Iterable[Dict[str, Any]],
 ) -> AsyncIterator[Dict[str, Any]]:
@@ -61,7 +62,7 @@ async def process_results(
         yield extract_all(result)
 
 
-# Functional post-processing
+# Functional-style post-processing
 def filter_successful(results: List[Dict]) -> List[Dict]:
     """Keep only results where HTTP status was 200."""
     return list(filter(lambda r: r.get("status") == 200, results))

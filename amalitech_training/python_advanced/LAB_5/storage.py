@@ -1,4 +1,5 @@
 from __future__ import annotations
+"""Asynchronous JSON persistence utilities for LAB_5 scrape outputs."""
 
 import json
 import logging
@@ -10,6 +11,7 @@ import aiofiles
 
 logger = logging.getLogger(__name__)
 
+# Default destination for generated JSON result files.
 OUTPUT_DIR = Path("output")
 
 

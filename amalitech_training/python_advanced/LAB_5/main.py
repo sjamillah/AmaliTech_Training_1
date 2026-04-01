@@ -1,4 +1,5 @@
 from __future__ import annotations
+"""CLI entry point for LAB_5 async scraping workflow."""
 
 import argparse
 import asyncio
@@ -28,6 +29,7 @@ DEMO_URLS = [
 
 
 async def scrape(urls: list[str]) -> None:
+    """Fetch, enrich, summarise, and persist scraped results for the given URLs."""
     print(f"\nFetching {len(urls)} URLs concurrently...")
     raw = await fetch_all(urls)
 
@@ -49,6 +51,7 @@ async def scrape(urls: list[str]) -> None:
 
 
 def main() -> None:
+    """Parse CLI arguments and run benchmark or scraping flow."""
     parser = argparse.ArgumentParser()
     parser.add_argument("urls", nargs="*", help="URLs to scrape")
     parser.add_argument("--demo", action="store_true", help="Run against demo URLs")
