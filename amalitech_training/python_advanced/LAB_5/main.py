@@ -63,7 +63,7 @@ def main() -> None:
     urls = DEMO_URLS if args.demo or not args.urls else args.urls
 
     if args.bench:
-        from performance import benchmark
+        from .performance import benchmark
 
         benchmark(urls[:4])
     else:

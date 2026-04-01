@@ -7,7 +7,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
-import aiofiles
+try:
+    import aiofiles
+except ModuleNotFoundError:
+    aiofiles = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +37,22 @@ async def save_results(results: List[Dict[str, Any]], path: Path = None) -> Path
     if path is None:
         path = build_filename()
     payload = json.dumps(results, indent=2, default=str)
-    async with aiofiles.open(path, "w", encoding="utf-8") as fh:
-        await fh.write(payload)
+    if aiofiles is not None:
+        async with aiofiles.open(path, "w", encoding="utf-8") as fh:
+            await fh.write(payload)
+    else:
+        # Fallback for tests when aiofiles is unavailable.
+        path.write_text(payload, encoding="utf-8")
     logger.info("saved %d results to %s", len(results), path)
     return path
 
 
 async def load_results(path: Path) -> List[Dict[str, Any]]:
     """Load a JSON file written by save_results()."""
-    async with aiofiles.open(path, encoding="utf-8") as fh:
-        content = await fh.read()
+    if aiofiles is not None:
+        async with aiofiles.open(path, encoding="utf-8") as fh:
+            content = await fh.read()
+    else:
+        # Fallback for tests when aiofiles is unavailable.
+        content = path.read_text(encoding="utf-8")
     return json.loads(content)
