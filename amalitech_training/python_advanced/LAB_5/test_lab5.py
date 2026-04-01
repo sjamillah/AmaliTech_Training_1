@@ -66,7 +66,7 @@ class TestExtractLinks:
 
     def test_finds_relative_links(self):
         links = extract_links(SAMPLE_HTML)
-        assert "/relative/path" in links
+        assert "/about" in links
 
     def test_returns_empty_list_when_no_links(self):
         assert extract_links("<p>no links here</p>") == []
