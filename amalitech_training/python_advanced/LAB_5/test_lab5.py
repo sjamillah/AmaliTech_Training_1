@@ -1,6 +1,8 @@
 from __future__ import annotations
 import pytest
 import time
+import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
 from .extractor import (
     extract_all,
     extract_headings,
@@ -12,6 +14,7 @@ from .extractor import (
     word_count,
 )
 from .async_decorators import rate_limit, retry
+from .fetcher import fetch_all, fetch_url, fetch_with_timeout
 
 SAMPLE_HTML = """
 <html>
@@ -38,6 +41,13 @@ FAILED_RESULT = {
     "url": "https://bad.example.com",
     "status": 404,
     "html": None,
+    "error": None,
+}
+
+MOCK_FETCH = {
+    "url": "https://example.com",
+    "status": 200,
+    "html": SAMPLE_HTML,
     "error": None,
 }
 
@@ -287,3 +297,92 @@ class TestRateLimitDecorator:
         t1 = await timed()
         t2 = await timed()
         assert (t2 - t1) >= 0.9
+
+
+def _mock_response(status: int, text: str = SAMPLE_HTML):
+    """Build a mock aiohttp response context manager."""
+    resp = AsyncMock()
+    resp.status = status
+    resp.text = AsyncMock(return_value=text)
+    resp.__aenter__ = AsyncMock(return_value=resp)
+    resp.__aexit__ = AsyncMock(return_value=False)
+    return resp
+
+
+def _mock_session(status: int = 200, text: str = SAMPLE_HTML):
+    session = MagicMock()
+    session.get = MagicMock(return_value=_mock_response(status, text))
+    return session
+
+
+class TestFetchUrl:
+    @pytest.mark.asyncio
+    async def test_returns_required_keys(self):
+        result = await fetch_url(_mock_session(200), "https://example.com")
+        assert {"url", "status", "html", "error"} <= result.keys()
+
+    @pytest.mark.asyncio
+    async def test_200_status_returned(self):
+        result = await fetch_url(_mock_session(200), "https://example.com")
+        assert result["status"] == 200
+
+    @pytest.mark.asyncio
+    async def test_200_returns_html(self):
+        result = await fetch_url(_mock_session(200, SAMPLE_HTML), "https://example.com")
+        assert result["html"] == SAMPLE_HTML
+
+    @pytest.mark.asyncio
+    async def test_non_200_gives_none_html(self):
+        result = await fetch_url(_mock_session(404), "https://example.com/x")
+        assert result["html"] is None
+        assert result["status"] == 404
+
+    @pytest.mark.asyncio
+    async def test_url_preserved_in_result(self):
+        url = "https://example.com/page"
+        result = await fetch_url(_mock_session(200), url)
+        assert result["url"] == url
+
+    @pytest.mark.asyncio
+    async def test_exception_returns_error_dict(self):
+        session = MagicMock()
+        session.get = MagicMock(side_effect=Exception("connection refused"))
+        result = await fetch_url(session, "https://unreachable.example.com")
+        assert result["error"] is not None
+        assert result["html"] is None
+        assert result["status"] is None
+
+
+class TestFetchAll:
+    @pytest.mark.asyncio
+    async def test_returns_list(self):
+        with patch("fetcher.fetch_url", new=AsyncMock(return_value=MOCK_FETCH)):
+            results = await fetch_all(["https://a.com", "https://b.com"])
+        assert isinstance(results, list)
+        assert len(results) == 2
+
+    @pytest.mark.asyncio
+    async def test_empty_urls_returns_empty(self):
+        results = await fetch_all([])
+        assert results == []
+
+    @pytest.mark.asyncio
+    async def test_each_result_has_required_keys(self):
+        with patch("fetcher.fetch_url", new=AsyncMock(return_value=MOCK_FETCH)):
+            results = await fetch_all(["https://example.com"])
+        assert {"url", "status", "html", "error"} <= results[0].keys()
+
+
+class TestFetchWithTimeout:
+    @pytest.mark.asyncio
+    async def test_returns_result_on_success(self):
+        with patch("fetcher.fetch_url", new=AsyncMock(return_value=MOCK_FETCH)):
+            result = await fetch_with_timeout("https://example.com", timeout=5.0)
+        assert result["url"] == "https://example.com"
+
+    @pytest.mark.asyncio
+    async def test_timeout_returns_error_dict(self):
+        with patch("fetcher.asyncio.wait_for", side_effect=asyncio.TimeoutError):
+            result = await fetch_with_timeout("https://slow.example.com", timeout=0.01)
+        assert result["error"] == "timeout"
+        assert result["html"] is None
