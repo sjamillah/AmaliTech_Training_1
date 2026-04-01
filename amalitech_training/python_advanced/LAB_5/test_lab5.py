@@ -1,4 +1,5 @@
 from __future__ import annotations
+import pytest
 from .extractor import (
     extract_all,
     extract_headings,
