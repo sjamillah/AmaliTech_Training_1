@@ -1,4 +1,5 @@
 from __future__ import annotations
+"""Benchmark utilities comparing sequential, threaded, and async scraping."""
 
 import asyncio
 import time
@@ -64,6 +65,7 @@ def run_threaded(urls: List[str], max_workers: int = 5) -> tuple[List[Dict], flo
 # Async
 async def _async_scrape(urls: List[str]) -> List[Dict]:
     """Run the full async pipeline and return enriched results."""
+    # Imported locally so sequential/threaded paths do not require async deps at import time.
     from fetcher import fetch_url
     import aiohttp
     async with aiohttp.ClientSession() as session:

@@ -1,4 +1,5 @@
 from __future__ import annotations
+"""Async utility decorators for retry and rate limiting behavior."""
 
 import asyncio
 import functools
@@ -16,6 +17,7 @@ def retry(max_attempts: int = 3, delay: float = 1.0, exceptions: tuple = (Except
     """
 
     def decorator(func):
+        """Wrap an async callable with retry behavior."""
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             wait = delay
@@ -55,6 +57,7 @@ def rate_limit(calls_per_second: float = 2.0):
     last_called: list[float] = [0.0]
 
     def decorator(func):
+        """Wrap an async callable with a minimum interval between calls."""
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with lock:
