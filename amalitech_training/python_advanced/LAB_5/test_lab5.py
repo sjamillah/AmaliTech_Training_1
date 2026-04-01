@@ -472,7 +472,7 @@ class TestSaveAndLoad:
 
 class TestBlockingFetch:
     def test_returns_required_keys(self):
-        with patch("performance.urllib_request.urlopen") as mock_open:
+        with patch("amalitech_training.python_advanced.LAB_5.performance.urllib_request.urlopen") as mock_open:
             resp = MagicMock()
             resp.status = 200
             resp.read.return_value = b"<html><title>T</title></html>"
@@ -484,13 +484,13 @@ class TestBlockingFetch:
 
     def test_url_error_returns_error_dict(self):
         from urllib.error import URLError
-        with patch("performance.urllib_request.urlopen", side_effect=URLError("no route")):
+        with patch("amalitech_training.python_advanced.LAB_5.performance.urllib_request.urlopen", side_effect=URLError("no route")):
             result = _blocking_fetch("https://unreachable.example.com")
         assert result["error"] is not None
         assert result["html"] is None
 
     def test_url_preserved(self):
-        with patch("performance.urllib_request.urlopen") as mock_open:
+        with patch("amalitech_training.python_advanced.LAB_5.performance.urllib_request.urlopen") as mock_open:
             resp = MagicMock()
             resp.status = 200
             resp.read.return_value = b"<html></html>"
@@ -503,18 +503,18 @@ class TestBlockingFetch:
 
 class TestRunSequential:
     def test_returns_results_and_time(self):
-        with patch("performance._blocking_fetch", return_value=MOCK_FETCH):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._blocking_fetch", return_value=MOCK_FETCH):
             results, elapsed = run_sequential(["https://a.com", "https://b.com"])
         assert isinstance(results, list)
         assert isinstance(elapsed, float)
 
     def test_count_matches_urls(self):
-        with patch("performance._blocking_fetch", return_value=MOCK_FETCH):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._blocking_fetch", return_value=MOCK_FETCH):
             results, _ = run_sequential(["https://a.com", "https://b.com"])
         assert len(results) == 2
 
     def test_results_enriched_by_extractor(self):
-        with patch("performance._blocking_fetch", return_value=MOCK_FETCH):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._blocking_fetch", return_value=MOCK_FETCH):
             results, _ = run_sequential(["https://example.com"])
         assert "title" in results[0]
 
@@ -525,23 +525,23 @@ class TestRunSequential:
 
 class TestRunThreaded:
     def test_returns_results_and_time(self):
-        with patch("performance._blocking_fetch", return_value=MOCK_FETCH):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._blocking_fetch", return_value=MOCK_FETCH):
             results, elapsed = run_threaded(["https://a.com", "https://b.com"])
         assert isinstance(results, list)
         assert isinstance(elapsed, float)
 
     def test_count_matches_urls(self):
-        with patch("performance._blocking_fetch", return_value=MOCK_FETCH):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._blocking_fetch", return_value=MOCK_FETCH):
             results, _ = run_threaded(["https://a.com", "https://b.com"])
         assert len(results) == 2
 
     def test_results_enriched(self):
-        with patch("performance._blocking_fetch", return_value=MOCK_FETCH):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._blocking_fetch", return_value=MOCK_FETCH):
             results, _ = run_threaded(["https://example.com"])
         assert "title" in results[0]
 
     def test_single_worker_still_works(self):
-        with patch("performance._blocking_fetch", return_value=MOCK_FETCH):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._blocking_fetch", return_value=MOCK_FETCH):
             results, _ = run_threaded(["https://example.com"], max_workers=1)
         assert len(results) == 1
 
@@ -551,7 +551,7 @@ class TestRunAsync:
         async def mock_scrape(urls):
             return [MOCK_FETCH for _ in urls]
 
-        with patch("performance._async_scrape", mock_scrape):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._async_scrape", mock_scrape):
             results, elapsed = run_async(["https://a.com"])
         assert isinstance(results, list)
         assert isinstance(elapsed, float)
@@ -560,7 +560,7 @@ class TestRunAsync:
         async def mock_scrape(urls):
             return [MOCK_FETCH for _ in urls]
 
-        with patch("performance._async_scrape", mock_scrape):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._async_scrape", mock_scrape):
             results, _ = run_async(["https://a.com", "https://b.com"])
         assert len(results) == 2
 
@@ -570,8 +570,8 @@ class TestBenchmark:
         async def mock_scrape(urls):
             return [MOCK_FETCH for _ in urls]
 
-        with patch("performance._blocking_fetch", return_value=MOCK_FETCH):
-            with patch("performance._async_scrape", mock_scrape):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._blocking_fetch", return_value=MOCK_FETCH):
+            with patch("amalitech_training.python_advanced.LAB_5.performance._async_scrape", mock_scrape):
                 report = benchmark(["https://example.com"])
 
         required = {"urls_count", "sequential_s", "threaded_s",
@@ -582,8 +582,8 @@ class TestBenchmark:
         async def mock_scrape(urls):
             return [MOCK_FETCH for _ in urls]
 
-        with patch("performance._blocking_fetch", return_value=MOCK_FETCH):
-            with patch("performance._async_scrape", mock_scrape):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._blocking_fetch", return_value=MOCK_FETCH):
+            with patch("amalitech_training.python_advanced.LAB_5.performance._async_scrape", mock_scrape):
                 report = benchmark(["https://example.com", "https://b.com"])
 
         assert report["urls_count"] == 2
@@ -592,8 +592,8 @@ class TestBenchmark:
         async def mock_scrape(urls):
             return [MOCK_FETCH for _ in urls]
 
-        with patch("performance._blocking_fetch", return_value=MOCK_FETCH):
-            with patch("performance._async_scrape", mock_scrape):
+        with patch("amalitech_training.python_advanced.LAB_5.performance._blocking_fetch", return_value=MOCK_FETCH):
+            with patch("amalitech_training.python_advanced.LAB_5.performance._async_scrape", mock_scrape):
                 report = benchmark(["https://example.com"])
 
         assert isinstance(report["threaded_speedup"], (int, float))
