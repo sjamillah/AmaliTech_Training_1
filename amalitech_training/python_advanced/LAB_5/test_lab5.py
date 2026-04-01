@@ -420,19 +420,19 @@ class TestEnsureOutputDir:
 
 class TestBuildFilename:
     def test_json_extension(self, tmp_path, monkeypatch):
-        import storage
+        from amalitech_training.python_advanced.LAB_5 import storage
 
         monkeypatch.setattr(storage, "OUTPUT_DIR", tmp_path)
         assert build_filename("run").suffix == ".json"
 
     def test_prefix_in_name(self, tmp_path, monkeypatch):
-        import storage
+        from amalitech_training.python_advanced.LAB_5 import storage
 
         monkeypatch.setattr(storage, "OUTPUT_DIR", tmp_path)
         assert "run_" in build_filename("run").name
 
     def test_file_inside_output_dir(self, tmp_path, monkeypatch):
-        import storage
+        from amalitech_training.python_advanced.LAB_5 import storage
 
         monkeypatch.setattr(storage, "OUTPUT_DIR", tmp_path)
         assert build_filename("x").parent == tmp_path
