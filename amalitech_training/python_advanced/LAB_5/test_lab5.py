@@ -2,6 +2,8 @@ from __future__ import annotations
 import pytest
 import time
 import asyncio
+import json
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 from .extractor import (
     extract_all,
@@ -15,6 +17,7 @@ from .extractor import (
 )
 from .async_decorators import rate_limit, retry
 from .fetcher import fetch_all, fetch_url, fetch_with_timeout
+from .storage import build_filename, ensure_output_dir, load_results, save_results
 
 SAMPLE_HTML = """
 <html>
@@ -398,3 +401,69 @@ class TestFetchWithTimeout:
             result = await fetch_with_timeout("https://slow.example.com", timeout=0.01)
         assert result["error"] == "timeout"
         assert result["html"] is None
+
+
+class TestEnsureOutputDir:
+    def test_creates_directory(self, tmp_path):
+        target = tmp_path / "nested" / "output"
+        result = ensure_output_dir(target)
+        assert result.is_dir()
+
+    def test_returns_path_object(self, tmp_path):
+        result = ensure_output_dir(tmp_path / "out")
+        assert isinstance(result, Path)
+
+    def test_existing_dir_does_not_raise(self, tmp_path):
+        ensure_output_dir(tmp_path)  # already exists
+        ensure_output_dir(tmp_path)  # second call must not raise
+
+
+class TestBuildFilename:
+    def test_json_extension(self, tmp_path, monkeypatch):
+        import storage
+
+        monkeypatch.setattr(storage, "OUTPUT_DIR", tmp_path)
+        assert build_filename("run").suffix == ".json"
+
+    def test_prefix_in_name(self, tmp_path, monkeypatch):
+        import storage
+
+        monkeypatch.setattr(storage, "OUTPUT_DIR", tmp_path)
+        assert "run_" in build_filename("run").name
+
+    def test_file_inside_output_dir(self, tmp_path, monkeypatch):
+        import storage
+
+        monkeypatch.setattr(storage, "OUTPUT_DIR", tmp_path)
+        assert build_filename("x").parent == tmp_path
+
+
+class TestSaveAndLoad:
+    @pytest.mark.asyncio
+    async def test_save_creates_file(self, tmp_path):
+        path = tmp_path / "out.json"
+        returned = await save_results([MOCK_FETCH], path)
+        assert returned == path
+        assert path.exists()
+
+    @pytest.mark.asyncio
+    async def test_content_is_valid_json(self, tmp_path):
+        path = tmp_path / "out.json"
+        await save_results([{"url": "x", "words": 7}], path)
+        loaded = json.loads(path.read_text())
+        assert loaded[0]["words"] == 7
+
+    @pytest.mark.asyncio
+    async def test_roundtrip(self, tmp_path):
+        data = [{"url": "a"}, {"url": "b"}]
+        path = tmp_path / "rt.json"
+        await save_results(data, path)
+        loaded = await load_results(path)
+        assert len(loaded) == 2
+        assert loaded[0]["url"] == "a"
+
+    @pytest.mark.asyncio
+    async def test_empty_list(self, tmp_path):
+        path = tmp_path / "empty.json"
+        await save_results([], path)
+        assert json.loads(path.read_text()) == []
