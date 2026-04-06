@@ -22,11 +22,10 @@ print("Connection pool created successfully.")
 
 def get_connection():
     """
-    Borrow a connection from the pool.
+    Get a connection from the pool.
 
-    The pool either gives you an idle existing connection
-    or creates a new one (up to maxconn).
-    ALWAYS call release_connection() when done!
+    The pool returns an available connection or creates a new one
+    until the configured limit is reached.
     """
     conn = connection_pool.getconn()
     return conn
@@ -34,19 +33,14 @@ def get_connection():
 
 def release_connection(conn):
     """
-    Return a connection back to the pool.
-
-    This makes the connection available for other operations.
-    NEVER call conn.close() directly — that destroys the connection!
-    Use this function instead to return it to the pool.
+    Return a connection to the pool so it can be reused.
     """
     connection_pool.putconn(conn)
 
 
 def close_all_connections():
     """
-    Shut down the entire pool.
-    Call this when your application is shutting down.
+    Close every connection managed by the pool.
     """
     connection_pool.closeall()
     print("All connections closed.")
@@ -55,9 +49,9 @@ def close_all_connections():
 @contextmanager
 def get_managed_connection():
     """
-    Context manager version. Automatically releases connection.
+    Context manager that automatically returns the connection to the pool.
 
-    Usage:
+    Example:
         with get_managed_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT 1")
