@@ -153,21 +153,3 @@ def get_time_between_lessons(student_id: int) -> list:
 
     finally:
         release_connection(conn)
-
-if __name__ == "__main__":
-    import json
-
-    print("=" * 60)
-    print("Student Dashboard Demo")
-    print("=" * 60)
-
-    dashboard = get_student_dashboard(student_id=DASHBOARD_DEMO_STUDENT_ID)
-    print(json.dumps(dashboard, indent=2, default=str))
-
-    print("\n" + "=" * 60)
-    print("Time Between Lessons (LAG Window Function)")
-    print("=" * 60)
-
-    timeline = get_time_between_lessons(student_id=DASHBOARD_DEMO_STUDENT_ID)
-    for entry in timeline:
-        print(f"  {entry['lesson']:<30} | {entry['time_since_last']}")
