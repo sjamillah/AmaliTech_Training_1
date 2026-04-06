@@ -153,31 +153,3 @@ def get_all_progress_for_student(student_id: int) -> dict:
         progress_map[course_id] = get_course_progress(student_id, course_id)
 
     return progress_map
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("Testing Redis Progress Caching")
-    print("=" * 60)
-
-    student_id = 1
-    course_id  = 1
-
-    print("\nFirst call (should be CACHE MISS, then cached):")
-    p1 = get_course_progress(student_id, course_id)
-    print(f"Progress: {p1}%")
-
-    print("\nSecond call (should be CACHE HIT):")
-    p2 = get_course_progress(student_id, course_id)
-    print(f"Progress: {p2}%")
-
-    print("\nInvalidating cache...")
-    invalidate_progress_cache(student_id, course_id)
-
-    print("\nThird call after invalidation (should be CACHE MISS again):")
-    p3 = get_course_progress(student_id, course_id)
-    print(f"Progress: {p3}%")
-
-    print("\nAll enrolled course progress:")
-    all_progress = get_all_progress_for_student(student_id)
-    for course_id, pct in all_progress.items():
-        print(f"  Course {course_id}: {pct}%")
