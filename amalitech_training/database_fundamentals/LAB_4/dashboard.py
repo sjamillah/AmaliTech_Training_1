@@ -147,32 +147,3 @@ def get_full_dashboard(city: str, party_size: int,
         })
 
     return result
-
-if __name__ == "__main__":
-    import json
-    from datetime import timezone
-
-    tz = timezone.utc
-    starts = datetime(2026, 4, 8, 19, 0, 0, tzinfo=tz)
-    ends   = datetime(2026, 4, 8, 21, 0, 0, tzinfo=tz)
-
-    print("=" * 60)
-    print("Restaurant Rankings — Kigali")
-    print("=" * 60)
-    rankings = get_restaurant_rankings("Kigali")
-    for r in rankings:
-        print(f"  #{r['city_rank']} {r['name']} | "
-              f"Rating: {r['avg_rating']} | Reviews: {r['review_count']}")
-
-    print("\n" + "=" * 60)
-    print("Nearby Restaurants (within 3km of Kigali city centre)")
-    print("=" * 60)
-    nearby = find_nearby_restaurants(lat=-1.9441, lon=30.0619, radius_km=3)
-    for r in nearby:
-        print(f"  {r['name']} — {r['distance_km']} km away")
-
-    print("\n" + "=" * 60)
-    print("Full Dashboard — Kigali, party of 4")
-    print("=" * 60)
-    dashboard = get_full_dashboard("Kigali", 4, starts, ends)
-    print(json.dumps(dashboard, indent=2, default=str))

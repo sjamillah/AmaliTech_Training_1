@@ -2,9 +2,6 @@ import psycopg2
 from datetime import datetime
 from db_connection import get_connection, release_connection
 
-
-# Reservation exceptions
-
 class TableNotAvailable(Exception):
     """Raised when the requested table has a conflicting reservation."""
     pass
@@ -134,7 +131,7 @@ def book_reservation(
         }
 
     except (TableNotFound, TableTooSmall, TableNotAvailable, InvalidTimeSlot) as e:
-        conn.rollback()   # undo any partial changes
+        conn.rollback()
         print(f"BOOKING REJECTED: {e}")
         raise
 
@@ -225,58 +222,3 @@ def find_available_tables(restaurant_id: int, party_size: int,
         ]
     finally:
         release_connection(conn)
-
-
-if __name__ == "__main__":
-    from datetime import timezone
-
-    print("=" * 60)
-    print("Testing Reservation Transaction")
-    print("=" * 60)
-
-    tz = timezone.utc
-    tomorrow_7pm  = datetime(2026, 4, 7, 19, 0, 0, tzinfo=tz)
-    tomorrow_9pm  = datetime(2026, 4, 7, 21, 0, 0, tzinfo=tz)
-
-    print("\n1. Find available tables at Restaurant 1 for 4 people:")
-    tables = find_available_tables(1, 4, tomorrow_7pm, tomorrow_9pm)
-    for t in tables:
-        print(f"   Table {t['table_number']} | Capacity: {t['capacity']} | "
-              f"Extra seats: {t['extra_seats']}")
-
-    print("\n2. Book the first available table:")
-    if tables:
-        try:
-            result = book_reservation(
-                customer_id=5,
-                restaurant_id=1,
-                table_id=tables[0]['table_id'],
-                party_size=4,
-                starts_at=tomorrow_7pm,
-                ends_at=tomorrow_9pm,
-                special_requests="Window seat preferred"
-            )
-            print(f"   Success: {result}")
-            reservation_id = result['reservation_id']
-
-            # 3. Try to double-book the same slot (should fail)
-            print("\n3. Try to double-book the same table (should fail):")
-            try:
-                book_reservation(
-                    customer_id=1,
-                    restaurant_id=1,
-                    table_id=tables[0]['table_id'],
-                    party_size=2,
-                    starts_at=tomorrow_7pm,
-                    ends_at=tomorrow_9pm
-                )
-            except TableNotAvailable as e:
-                print(f"   PASSED — caught expected error: {e}")
-
-            # 4. Cancel the booking
-            print("\n4. Cancel the reservation:")
-            cancelled = cancel_reservation(reservation_id, customer_id=5)
-            print(f"   Cancelled: {cancelled}")
-
-        except Exception as e:
-            print(f"   Error: {e}")
