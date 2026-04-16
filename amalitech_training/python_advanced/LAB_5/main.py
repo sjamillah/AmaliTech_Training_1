@@ -63,9 +63,21 @@ def main() -> None:
     urls = DEMO_URLS if args.demo or not args.urls else args.urls
 
     if args.bench:
-        from .performance import benchmark
+        from .performance import benchmark, save_benchmark_graphs, save_benchmark_report
 
-        benchmark(urls[:4])
+        report = benchmark(urls[:4], include_process_pool=True)
+        if not isinstance(report, dict):
+            print("Benchmark did not return a report dictionary.")
+            return
+        report_path = save_benchmark_report(report)
+        print(f"\nBenchmark report saved to: {report_path}")
+
+        graph_paths = save_benchmark_graphs(report)
+        if graph_paths:
+            for name, path in graph_paths.items():
+                print(f"Benchmark graph ({name}) saved to: {path}")
+        else:
+            print("Benchmark graphs were not generated (matplotlib not installed).")
     else:
         asyncio.run(scrape(urls))
 
