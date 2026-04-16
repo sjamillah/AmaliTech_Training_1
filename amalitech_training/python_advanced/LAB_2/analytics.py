@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import functools
+import json
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, List
 
 from .decorators import cache, log_call, timer
@@ -135,3 +138,26 @@ def format_report(report: Dict) -> str:
 
     lines.append("=" * 50)
     return "\n".join(lines)
+
+
+def save_report(
+    report: Dict,
+    output_dir: str | Path = "output",
+    prefix: str = "lab2_report",
+) -> Dict[str, Path]:
+    """
+    Save a report as both JSON and plain text for easier reference.
+
+    Returns a dict with paths for the generated files.
+    """
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    json_path = out_dir / f"{prefix}_{timestamp}.json"
+    text_path = out_dir / f"{prefix}_{timestamp}.txt"
+
+    json_path.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+    text_path.write_text(format_report(report), encoding="utf-8")
+
+    return {"json": json_path, "text": text_path}

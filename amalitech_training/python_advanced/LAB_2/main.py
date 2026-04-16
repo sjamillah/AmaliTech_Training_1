@@ -12,7 +12,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from .analytics import format_report, generate_report
+from .analytics import format_report, generate_report, save_report
 from .generators import BatchIterator, group_by_hour, parse_file
 
 SAMPLE_LOGS = [
@@ -47,6 +47,12 @@ def process_file(log_path: Path) -> None:
     # Generate and display report
     report = generate_report(entries)
     print(format_report(report))
+
+    # Save report for later reference
+    saved_paths = save_report(report)
+    print("\n  Saved report files:")
+    print(f"    JSON : {saved_paths['json']}")
+    print(f"    TEXT : {saved_paths['text']}")
 
     # Group by hour using itertools.groupby
     by_hour = group_by_hour(entries)
