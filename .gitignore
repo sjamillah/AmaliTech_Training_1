@@ -35,3 +35,5 @@ Thumbs.db
 
 *.json
 !sample_data/*.json
+mongodb-compass.deb
+*.deb
