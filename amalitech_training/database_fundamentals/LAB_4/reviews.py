@@ -3,9 +3,13 @@ from datetime import datetime
 from bson import ObjectId
 import psycopg2
 from db_connection import get_connection, release_connection
+from dotenv import load_dotenv
+import os
 
-client     = MongoClient('mongodb://localhost:27017/')
-db         = client['reservations_system']
+load_dotenv()
+
+client     = MongoClient(os.getenv('MONGO_URI', 'mongodb://localhost:27017/'))
+db         = client[os.getenv('MONGO_DATABASE', 'reservations_system')]
 reviews_col = db['reviews']
 
 reviews_col.create_index([('restaurant_id', 1)])

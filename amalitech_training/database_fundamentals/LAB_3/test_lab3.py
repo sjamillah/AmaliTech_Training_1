@@ -290,7 +290,7 @@ def test_redis_cache_key_format() -> None:
 
     redis_cache = load_module_from_path(
         "redis_cache_module",
-        LAB_DIR / "redis-cache.py",
+        LAB_DIR / "redis_cache.py",
         {
             "redis": redis_mod,
             "db_connection": db_stub,
@@ -326,7 +326,7 @@ def test_redis_get_course_progress_uses_cache_hit() -> None:
 
     redis_cache = load_module_from_path(
         "redis_cache_hit_module",
-        LAB_DIR / "redis-cache.py",
+        LAB_DIR / "redis_cache.py",
         {
             "redis": redis_mod,
             "db_connection": db_stub,
@@ -368,7 +368,7 @@ def test_redis_get_course_progress_sets_cache_on_miss() -> None:
 
     redis_cache = load_module_from_path(
         "redis_cache_miss_module",
-        LAB_DIR / "redis-cache.py",
+        LAB_DIR / "redis_cache.py",
         {
             "redis": redis_mod,
             "db_connection": db_stub,
@@ -413,7 +413,7 @@ def test_redis_invalidate_for_lesson_looks_up_course_and_invalidates() -> None:
 
     redis_cache = load_module_from_path(
         "redis_cache_invalidate_module",
-        LAB_DIR / "redis-cache.py",
+        LAB_DIR / "redis_cache.py",
         {
             "redis": redis_mod,
             "db_connection": db_stub,
@@ -458,7 +458,7 @@ def test_redis_get_course_progress_falls_back_when_redis_errors() -> None:
 
     redis_cache = load_module_from_path(
         "redis_cache_fallback_module",
-        LAB_DIR / "redis-cache.py",
+        LAB_DIR / "redis_cache.py",
         {
             "redis": redis_mod,
             "db_connection": db_stub,
@@ -506,7 +506,7 @@ def test_redis_get_all_progress_for_student_collects_all_courses() -> None:
 
     redis_cache = load_module_from_path(
         "redis_cache_all_module",
-        LAB_DIR / "redis-cache.py",
+        LAB_DIR / "redis_cache.py",
         {
             "redis": redis_mod,
             "db_connection": db_stub,
@@ -550,7 +550,7 @@ def test_redis_calculate_progress_returns_zero_for_empty_result() -> None:
 
     redis_cache = load_module_from_path(
         "redis_cache_zero_module",
-        LAB_DIR / "redis-cache.py",
+        LAB_DIR / "redis_cache.py",
         {
             "redis": redis_mod,
             "db_connection": db_stub,
@@ -590,7 +590,7 @@ def test_mongo_create_thread_returns_inserted_id() -> None:
 
     mongo_module = load_module_from_path(
         "mongo_integrator_module",
-        LAB_DIR / "mongo-integrator.py",
+        LAB_DIR / "mongo_integrator.py",
         {
             "pymongo": pymongo_stub,
             "bson": bson_stub,
@@ -631,7 +631,7 @@ def test_mongo_add_reply_returns_none_if_thread_not_found() -> None:
 
     mongo_module = load_module_from_path(
         "mongo_integrator_reply_module",
-        LAB_DIR / "mongo-integrator.py",
+        LAB_DIR / "mongo_integrator.py",
         {
             "pymongo": pymongo_stub,
             "bson": bson_stub,
@@ -667,7 +667,7 @@ def test_mongo_thread_count_per_course_maps_aggregation_result() -> None:
 
     mongo_module = load_module_from_path(
         "mongo_integrator_agg_module",
-        LAB_DIR / "mongo-integrator.py",
+        LAB_DIR / "mongo_integrator.py",
         {
             "pymongo": pymongo_stub,
             "bson": bson_stub,
@@ -696,7 +696,7 @@ def test_mongo_get_course_threads_returns_projection_without_replies() -> None:
 
     mongo_module = load_module_from_path(
         "mongo_integrator_threads_module",
-        LAB_DIR / "mongo-integrator.py",
+        LAB_DIR / "mongo_integrator.py",
         {
             "pymongo": pymongo_stub,
             "bson": bson_stub,
@@ -727,7 +727,7 @@ def test_mongo_get_thread_with_replies_returns_document() -> None:
 
     mongo_module = load_module_from_path(
         "mongo_integrator_thread_module",
-        LAB_DIR / "mongo-integrator.py",
+        LAB_DIR / "mongo_integrator.py",
         {
             "pymongo": pymongo_stub,
             "bson": bson_stub,
@@ -757,7 +757,7 @@ def test_mongo_search_threads_uses_text_query() -> None:
 
     mongo_module = load_module_from_path(
         "mongo_integrator_search_module",
-        LAB_DIR / "mongo-integrator.py",
+        LAB_DIR / "mongo_integrator.py",
         {
             "pymongo": pymongo_stub,
             "bson": bson_stub,
@@ -787,7 +787,7 @@ def test_mongo_upvote_thread_returns_true_when_modified() -> None:
 
     mongo_module = load_module_from_path(
         "mongo_integrator_upvote_module",
-        LAB_DIR / "mongo-integrator.py",
+        LAB_DIR / "mongo_integrator.py",
         {
             "pymongo": pymongo_stub,
             "bson": bson_stub,

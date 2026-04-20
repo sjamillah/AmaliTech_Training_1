@@ -1,4 +1,4 @@
-import psycopg2
+from psycopg2 import pool
 from dotenv import load_dotenv
 from contextlib import contextmanager
 import os
@@ -8,12 +8,12 @@ load_dotenv()
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
     "port": int(os.getenv("DB_PORT")),
-    "database": os.getenv("DB_NAME"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_NAME_1"),
+    "user": os.getenv("DB_USER_1"),
+    "password": os.getenv("DB_PASSWORD_1"),
 }
 
-connection_pool = psycopg2.pool.ThreadedConnectionPool(
+connection_pool = pool.ThreadedConnectionPool(
     minconn=2, maxconn=10, **DB_CONFIG
 )
 

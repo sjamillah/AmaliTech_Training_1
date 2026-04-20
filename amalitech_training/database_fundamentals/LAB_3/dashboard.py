@@ -1,6 +1,9 @@
 from db_connection import get_connection, release_connection
 from redis_cache import get_course_progress
-from forum import get_thread_count_per_course
+try:
+    from forum import get_thread_count_per_course
+except ImportError:
+    from mongo_integrator import get_thread_count_per_course
 from dotenv import load_dotenv
 import os
 

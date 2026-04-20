@@ -112,10 +112,12 @@ SELECT
     city,
     cuisine_type,
     ROUND(
-        ST_Distance(
+        (
+            ST_Distance(
             location,
             ST_MakePoint(30.0619, -1.9441)::GEOGRAPHY  -- reference point (Kigali city centre)
-        ) / 1000.0,
+            ) / 1000.0
+        )::NUMERIC,
         2
     )                                               AS distance_km
 
@@ -139,12 +141,23 @@ ORDER BY distance_km ASC;
 -- ->> extracts the value as text; -> extracts it as JSONB.
 -- ============================================================
 
+WITH day_lookup AS (
+    SELECT CASE EXTRACT(ISODOW FROM NOW())::INT
+        WHEN 1 THEN 'monday'
+        WHEN 2 THEN 'tuesday'
+        WHEN 3 THEN 'wednesday'
+        WHEN 4 THEN 'thursday'
+        WHEN 5 THEN 'friday'
+        WHEN 6 THEN 'saturday'
+        WHEN 7 THEN 'sunday'
+    END AS today_key
+)
 SELECT
     name,
     city,
-    -- Extract today's hours using the lowercase day name as a key
-    operating_hours -> LOWER(TO_CHAR(NOW(), 'Day'))    AS today_hours_json,
-    operating_hours ->> 'friday'                        AS friday_hours_text,
+    day_lookup.today_key                               AS today_key,
+    operating_hours ->> day_lookup.today_key          AS today_hours_text,
+    operating_hours ->> 'friday'                      AS friday_hours_text,
 
     -- Check if the restaurant is open on Sundays
     CASE
@@ -154,6 +167,7 @@ SELECT
     END                                               AS sunday_status
 
 FROM restaurants
+CROSS JOIN day_lookup
 ORDER BY name;
 
 
