@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 import types
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import Mock
@@ -41,6 +42,7 @@ def test_reservation_book_rejects_invalid_time_slot() -> None:
     db_stub = types.ModuleType("db_connection")
     db_stub.get_connection = lambda: Mock()
     db_stub.release_connection = lambda conn: None
+    db_stub.get_managed_connection = lambda: nullcontext(Mock())
 
     reservation = load_module_from_path(
         "reservation_mod_invalid_time",
@@ -73,6 +75,7 @@ def test_reservation_book_rejects_too_small_table() -> None:
     db_stub = types.ModuleType("db_connection")
     db_stub.get_connection = lambda: fake_conn
     db_stub.release_connection = Mock()
+    db_stub.get_managed_connection = Mock(return_value=nullcontext(fake_conn))
 
     reservation = load_module_from_path(
         "reservation_mod_small_table",
@@ -90,7 +93,7 @@ def test_reservation_book_rejects_too_small_table() -> None:
         reservation.book_reservation(1, 1, 10, 4, starts, ends)
 
     fake_conn.rollback.assert_called_once()
-    db_stub.release_connection.assert_called_once_with(fake_conn)
+    db_stub.get_managed_connection.assert_called_once()
 
 
 def test_reservation_book_success_commits_and_returns_payload() -> None:
@@ -110,6 +113,7 @@ def test_reservation_book_success_commits_and_returns_payload() -> None:
     db_stub = types.ModuleType("db_connection")
     db_stub.get_connection = lambda: fake_conn
     db_stub.release_connection = Mock()
+    db_stub.get_managed_connection = Mock(return_value=nullcontext(fake_conn))
 
     reservation = load_module_from_path(
         "reservation_mod_success",
@@ -129,7 +133,7 @@ def test_reservation_book_success_commits_and_returns_payload() -> None:
     assert result["table_number"] == "T10"
     assert result["status"] == "confirmed"
     fake_conn.commit.assert_called_once()
-    db_stub.release_connection.assert_called_once_with(fake_conn)
+    db_stub.get_managed_connection.assert_called_once()
 
 
 def test_reservation_cancel_returns_true_when_row_updated() -> None:
@@ -145,6 +149,7 @@ def test_reservation_cancel_returns_true_when_row_updated() -> None:
     db_stub = types.ModuleType("db_connection")
     db_stub.get_connection = lambda: fake_conn
     db_stub.release_connection = Mock()
+    db_stub.get_managed_connection = lambda: nullcontext(fake_conn)
 
     reservation = load_module_from_path(
         "reservation_mod_cancel",
@@ -156,6 +161,32 @@ def test_reservation_cancel_returns_true_when_row_updated() -> None:
     )
 
     assert reservation.cancel_reservation(15, 3) is True
+    fake_conn.commit.assert_called_once()
+
+
+def test_reservation_cancel_accepts_explicit_conn() -> None:
+    psycopg2_stub = types.ModuleType("psycopg2")
+    psycopg2_stub.Error = Exception
+
+    fake_cursor = Mock()
+    fake_cursor.fetchone.return_value = (15,)
+
+    fake_conn = Mock()
+    fake_conn.cursor.return_value = fake_cursor
+
+    db_stub = types.ModuleType("db_connection")
+    db_stub.get_managed_connection = lambda: nullcontext(fake_conn)
+
+    reservation = load_module_from_path(
+        "reservation_mod_cancel_explicit_conn",
+        LAB_DIR / "reservation.py",
+        {
+            "db_connection": db_stub,
+            "psycopg2": psycopg2_stub,
+        },
+    )
+
+    assert reservation.cancel_reservation(15, 3, conn=fake_conn) is True
     fake_conn.commit.assert_called_once()
 
 

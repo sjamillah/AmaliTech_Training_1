@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 import types
+from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -470,6 +471,34 @@ def test_redis_get_course_progress_falls_back_when_redis_errors() -> None:
 
     assert redis_cache.get_course_progress(4, 8) == 33.3
     assert redis_cache.redis_client.saved == ("progress:4:8", redis_cache.CACHE_TTL_SECONDS, "33.3")
+
+
+def test_enrollment_complete_lesson_accepts_explicit_conn() -> None:
+    psycopg2_stub = types.ModuleType("psycopg2")
+    psycopg2_stub.Error = Exception
+
+    fake_cursor = Mock()
+    fake_cursor.fetchone.return_value = (44, "2026-04-08T20:00:00Z")
+
+    fake_conn = Mock()
+    fake_conn.cursor.return_value = fake_cursor
+
+    db_stub = types.ModuleType("db_connection")
+    db_stub.get_managed_connection = lambda: nullcontext(fake_conn)
+
+    enrollment = load_module_from_path(
+        "enrollment_module_explicit_conn",
+        LAB_DIR / "enrollment.py",
+        {
+            "db_connection": db_stub,
+            "psycopg2": psycopg2_stub,
+        },
+    )
+
+    result = enrollment.complete_lesson(3, 9, 95.0, conn=fake_conn)
+
+    assert result == {"completion_id": 44, "completed_at": "2026-04-08T20:00:00Z"}
+    fake_conn.commit.assert_called_once()
 
 
 def test_redis_get_all_progress_for_student_collects_all_courses() -> None:
